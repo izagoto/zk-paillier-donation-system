@@ -1,0 +1,22 @@
+# Environment
+.env
+.env.*
+
+# Go
+bin/
+tmp/
+
+# Secrets
+keys/
+
+# Node
+node_modules/
+.next/
+out/
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
