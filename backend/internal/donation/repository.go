@@ -52,15 +52,15 @@ func (r *Repository) Create(
 			encrypted_amount,
 			status
 		)
-		VALUES ($1, $2, $3, $4, $5, $6)
+		VALUES ($1, $2, $3, $4, $5, 'pending')
 		RETURNING
 			id,
 			campaign_id,
 			donor_id,
 			commitment,
 			encrypted_amount,
-			zk_proof,
-			tx_hash,
+			COALESCE(zk_proof, ''),
+			COALESCE(tx_hash, ''),
 			status,
 			created_at
 		`,
@@ -69,7 +69,6 @@ func (r *Repository) Create(
 		donorID,
 		commitment,
 		encryptedAmount,
-		"pending",
 	).Scan(
 		&donation.ID,
 		&donation.CampaignID,
@@ -103,8 +102,8 @@ func (r *Repository) FindByID(
 			donor_id,
 			commitment,
 			encrypted_amount,
-			zk_proof,
-			tx_hash,
+			COALESCE(zk_proof, ''),
+			COALESCE(tx_hash, ''),
 			status,
 			created_at
 		FROM donations
@@ -142,8 +141,8 @@ func (r *Repository) FindByCampaignID(
 			donor_id,
 			commitment,
 			encrypted_amount,
-			zk_proof,
-			tx_hash,
+			COALESCE(zk_proof, ''),
+			COALESCE(tx_hash, ''),
 			status,
 			created_at
 		FROM donations
@@ -174,6 +173,132 @@ func (r *Repository) FindByCampaignID(
 			&donation.CreatedAt,
 		)
 		if err != nil {
+			return nil, err
+		}
+
+		donations = append(donations, donation)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return donations, nil
+}
+
+func (r *Repository) UpsertAggregate(
+	ctx context.Context,
+	campaignID uuid.UUID,
+	encryptedTotal string,
+) error {
+	_, err := r.db.Exec(
+		ctx,
+		`
+		INSERT INTO campaign_aggregates (
+			campaign_id,
+			encrypted_total,
+			updated_at
+		)
+		VALUES ($1, $2, NOW())
+		ON CONFLICT (campaign_id)
+		DO UPDATE SET
+			encrypted_total = EXCLUDED.encrypted_total,
+			updated_at = NOW()
+		`,
+		campaignID,
+		encryptedTotal,
+	)
+
+	return err
+}
+
+func (r *Repository) FindAggregate(
+	ctx context.Context,
+	campaignID uuid.UUID,
+) (string, error) {
+	var encryptedTotal string
+
+	err := r.db.QueryRow(
+		ctx,
+		`
+		SELECT encrypted_total
+		FROM campaign_aggregates
+		WHERE campaign_id = $1
+		`,
+		campaignID,
+	).Scan(&encryptedTotal)
+
+	if err != nil {
+		return "", err
+	}
+
+	return encryptedTotal, nil
+}
+
+func (r *Repository) UpdateStatus(
+	ctx context.Context,
+	donationID uuid.UUID,
+	status string,
+) error {
+	_, err := r.db.Exec(
+		ctx,
+		`
+		UPDATE donations
+		SET status = $1
+		WHERE id = $2
+		`,
+		status,
+		donationID,
+	)
+
+	return err
+}
+
+func (r *Repository) FindConfirmedByCampaignID(
+	ctx context.Context,
+	campaignID uuid.UUID,
+) ([]Donation, error) {
+	rows, err := r.db.Query(
+		ctx,
+		`
+		SELECT
+			id,
+			campaign_id,
+			donor_id,
+			commitment,
+			encrypted_amount,
+			COALESCE(zk_proof, ''),
+			COALESCE(tx_hash, ''),
+			status,
+			created_at
+		FROM donations
+		WHERE campaign_id = $1
+		  AND status = 'confirmed'
+		ORDER BY created_at DESC
+		`,
+		campaignID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var donations []Donation
+
+	for rows.Next() {
+		var donation Donation
+
+		if err := rows.Scan(
+			&donation.ID,
+			&donation.CampaignID,
+			&donation.DonorID,
+			&donation.Commitment,
+			&donation.EncryptedAmount,
+			&donation.ZKProof,
+			&donation.TxHash,
+			&donation.Status,
+			&donation.CreatedAt,
+		); err != nil {
 			return nil, err
 		}
 

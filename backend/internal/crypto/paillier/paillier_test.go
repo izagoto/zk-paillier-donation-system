@@ -136,3 +136,41 @@ func TestSaveAndLoadKeypair(t *testing.T) {
 		)
 	}
 }
+
+func TestKeyManagerLoadOrGenerate(t *testing.T) {
+	keyPath := t.TempDir() + "/paillier.json"
+
+	manager := NewKeyManager(keyPath, 512)
+
+	if err := manager.LoadOrGenerate(); err != nil {
+		t.Fatalf("failed to generate keypair: %v", err)
+	}
+
+	if manager.PublicKey == nil {
+		t.Fatal("public key is nil")
+	}
+
+	if manager.PrivateKey == nil {
+		t.Fatal("private key is nil")
+	}
+
+	firstN := new(big.Int).Set(manager.PublicKey.N)
+
+	manager2 := NewKeyManager(keyPath, 512)
+
+	if err := manager2.LoadOrGenerate(); err != nil {
+		t.Fatalf("failed to load keypair: %v", err)
+	}
+
+	if manager2.PublicKey == nil {
+		t.Fatal("loaded public key is nil")
+	}
+
+	if manager2.PrivateKey == nil {
+		t.Fatal("loaded private key is nil")
+	}
+
+	if manager2.PublicKey.N.Cmp(firstN) != 0 {
+		t.Fatal("loaded keypair does not match original keypair")
+	}
+}

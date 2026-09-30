@@ -8,9 +8,15 @@ import (
 
 	"github.com/izagoto/zk-paillier-donation-system/internal/auth"
 	"github.com/izagoto/zk-paillier-donation-system/internal/campaign"
+	"github.com/izagoto/zk-paillier-donation-system/internal/crypto/paillier"
+	"github.com/izagoto/zk-paillier-donation-system/internal/donation"
 )
 
-func Setup(db *pgxpool.Pool, jwtSecret string) *gin.Engine {
+func Setup(
+	db *pgxpool.Pool,
+	jwtSecret string,
+	paillierPublicKey *paillier.PublicKey,
+) *gin.Engine {
 	r := gin.Default()
 
 	r.GET("/health", func(c *gin.Context) {
@@ -19,6 +25,7 @@ func Setup(db *pgxpool.Pool, jwtSecret string) *gin.Engine {
 		})
 	})
 
+	// Authentication
 	userRepository := auth.NewUserRepository(db)
 	authService := auth.NewService(userRepository)
 
@@ -47,6 +54,7 @@ func Setup(db *pgxpool.Pool, jwtSecret string) *gin.Engine {
 		}
 	}
 
+	// Campaign
 	campaignRepository := campaign.NewRepository(db)
 	campaignService := campaign.NewService(campaignRepository)
 	campaignHandler := campaign.NewHandler(campaignService)
@@ -63,5 +71,24 @@ func Setup(db *pgxpool.Pool, jwtSecret string) *gin.Engine {
 		}
 	}
 
+	// Donation
+	donationRepository := donation.NewRepository(db)
+	donationService := donation.NewService(
+		donationRepository,
+		campaignRepository,
+		paillierPublicKey,
+	)
+
+	donationHandler := donation.NewHandler(donationService)
+	donationRoutes := api.Group("/donations")
+	{
+		protectedDonationRoutes := donationRoutes.Group("")
+		protectedDonationRoutes.Use(auth.AuthMiddleware(jwtManager))
+		{
+			protectedDonationRoutes.POST("", donationHandler.Create)
+			protectedDonationRoutes.POST("/:id/confirm", donationHandler.Confirm)
+		}
+	}
+	
 	return r
 }
