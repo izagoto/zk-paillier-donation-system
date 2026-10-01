@@ -2,9 +2,11 @@ package donation
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -332,4 +334,118 @@ func (r *Repository) FindConfirmedByCampaignID(
 	}
 
 	return donations, nil
+}
+
+func (r *Repository) UpdateAggregate(
+	ctx context.Context,
+	campaignID uuid.UUID,
+	update func(current string) (string, error),
+) error {
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	// Lock the campaign row to serialize aggregate updates
+	// for the same campaign.
+	var campaignExists bool
+
+	err = tx.QueryRow(
+		ctx,
+		`
+		SELECT EXISTS (
+			SELECT 1
+			FROM campaigns
+			WHERE id = $1
+		)
+		`,
+		campaignID,
+	).Scan(&campaignExists)
+	if err != nil {
+		return err
+	}
+
+	if !campaignExists {
+		return errors.New("campaign not found")
+	}
+
+	_, err = tx.Exec(
+		ctx,
+		`
+		SELECT id
+		FROM campaigns
+		WHERE id = $1
+		FOR UPDATE
+		`,
+		campaignID,
+	)
+	if err != nil {
+		return err
+	}
+
+	var encryptedTotal string
+
+	err = tx.QueryRow(
+		ctx,
+		`
+		SELECT encrypted_total
+		FROM campaign_aggregates
+		WHERE campaign_id = $1
+		FOR UPDATE
+		`,
+		campaignID,
+	).Scan(&encryptedTotal)
+
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			encryptedTotal, err = update("")
+			if err != nil {
+				return err
+			}
+
+			_, err = tx.Exec(
+				ctx,
+				`
+				INSERT INTO campaign_aggregates (
+					campaign_id,
+					encrypted_total,
+					updated_at
+				)
+				VALUES ($1, $2, NOW())
+				`,
+				campaignID,
+				encryptedTotal,
+			)
+			if err != nil {
+				return err
+			}
+
+			return tx.Commit(ctx)
+		}
+
+		return err
+	}
+
+	encryptedTotal, err = update(encryptedTotal)
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.Exec(
+		ctx,
+		`
+		UPDATE campaign_aggregates
+		SET encrypted_total = $1,
+		    updated_at = NOW()
+		WHERE campaign_id = $2
+		`,
+		encryptedTotal,
+		campaignID,
+	)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
 }

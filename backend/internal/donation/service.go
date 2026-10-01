@@ -190,8 +190,12 @@ func (s *Service) Create(
 		return nil, err
 	}
 
-	// Aggregate only confirmed donations.
-	if err := s.Aggregate(ctx, campaignID); err != nil {
+	// Increment the encrypted aggregate with the newly confirmed donation.
+	if err := s.IncrementAggregate(
+		ctx,
+		campaignID,
+		encryptedAmount.String(),
+	); err != nil {
 		return nil, err
 	}
 
@@ -339,4 +343,44 @@ func (s *Service) Confirm(
 	}
 
 	return s.Aggregate(ctx, donation.CampaignID)
+}
+
+func (s *Service) IncrementAggregate(
+	ctx context.Context,
+	campaignID uuid.UUID,
+	encryptedAmount string,
+) error {
+	if s.paillierPublicKey == nil {
+		return errors.New("paillier public key is not configured")
+	}
+
+	newCiphertext, ok := new(big.Int).SetString(encryptedAmount, 10)
+	if !ok {
+		return errors.New("invalid encrypted amount")
+	}
+
+	return s.repository.UpdateAggregate(
+		ctx,
+		campaignID,
+		func(current string) (string, error) {
+			if current == "" {
+				return newCiphertext.String(), nil
+			}
+
+			currentCiphertext, ok := new(big.Int).SetString(current, 10)
+			if !ok {
+				return "", errors.New("invalid encrypted aggregate")
+			}
+
+			updatedCiphertext, err := s.paillierPublicKey.Add(
+				currentCiphertext,
+				newCiphertext,
+			)
+			if err != nil {
+				return "", err
+			}
+
+			return updatedCiphertext.String(), nil
+		},
+	)
 }

@@ -174,3 +174,53 @@ func TestKeyManagerLoadOrGenerate(t *testing.T) {
 		t.Fatal("loaded keypair does not match original keypair")
 	}
 }
+
+func TestIncrementalHomomorphicAggregation(t *testing.T) {
+	publicKey, privateKey, err := GenerateKeypair(512)
+	if err != nil {
+		t.Fatalf("failed to generate keypair: %v", err)
+	}
+
+	amounts := []*big.Int{
+		big.NewInt(100000),
+		big.NewInt(250000),
+		big.NewInt(50000),
+	}
+
+	var encryptedTotal *big.Int
+
+	for _, amount := range amounts {
+		ciphertext, err := publicKey.Encrypt(amount)
+		if err != nil {
+			t.Fatalf("failed to encrypt amount: %v", err)
+		}
+
+		if encryptedTotal == nil {
+			encryptedTotal = ciphertext
+			continue
+		}
+
+		encryptedTotal, err = publicKey.Add(
+			encryptedTotal,
+			ciphertext,
+		)
+		if err != nil {
+			t.Fatalf("failed to add ciphertext: %v", err)
+		}
+	}
+
+	decryptedTotal, err := privateKey.Decrypt(encryptedTotal)
+	if err != nil {
+		t.Fatalf("failed to decrypt total: %v", err)
+	}
+
+	expected := big.NewInt(400000)
+
+	if decryptedTotal.Cmp(expected) != 0 {
+		t.Fatalf(
+			"incremental aggregation mismatch: got %s, want %s",
+			decryptedTotal.String(),
+			expected.String(),
+		)
+	}
+}
