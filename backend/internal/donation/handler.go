@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/izagoto/zk-paillier-donation-system/internal/zk"
 )
 
 type Handler struct {
@@ -18,8 +19,10 @@ func NewHandler(service *Service) *Handler {
 }
 
 type createDonationRequest struct {
-	CampaignID string `json:"campaign_id"`
-	Amount     string `json:"amount"`
+	CampaignID string   `json:"campaign_id"`
+	Amount     string   `json:"amount"`
+	Commitment string   `json:"commitment"`
+	Proof      zk.Proof `json:"proof"`
 }
 
 func (h *Handler) Create(c *gin.Context) {
@@ -61,6 +64,8 @@ func (h *Handler) Create(c *gin.Context) {
 		campaignID,
 		userID,
 		request.Amount,
+		request.Commitment,
+		request.Proof,
 	)
 	if err != nil {
 		switch err {
@@ -85,6 +90,16 @@ func (h *Handler) Create(c *gin.Context) {
 			})
 
 		case ErrAmountExceedsMaximum:
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": err.Error(),
+			})
+
+		case ErrCommitmentRequired:
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": err.Error(),
+			})
+
+		case ErrInvalidZKProof:
 			c.JSON(http.StatusBadRequest, gin.H{
 				"error": err.Error(),
 			})

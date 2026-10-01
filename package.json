@@ -1,0 +1,28 @@
+{
+  "name": "zk-paillier-donation-system",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/izagoto/zk-paillier-donation-system.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/izagoto/zk-paillier-donation-system/issues"
+  },
+  "homepage": "https://github.com/izagoto/zk-paillier-donation-system#readme",
+  "devDependencies": {
+    "snarkjs": "^0.7.6"
+  },
+  "dependencies": {
+    "circomlib": "^2.0.5",
+    "circomlibjs": "^0.1.7"
+  }
+}

@@ -2,15 +2,17 @@ package donation
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"math/big"
 	"strings"
 
 	"github.com/google/uuid"
 
+	"github.com/izagoto/zk-paillier-donation-system/internal/blockchain"
 	"github.com/izagoto/zk-paillier-donation-system/internal/campaign"
-	"github.com/izagoto/zk-paillier-donation-system/internal/crypto/commitment"
 	"github.com/izagoto/zk-paillier-donation-system/internal/crypto/paillier"
+	"github.com/izagoto/zk-paillier-donation-system/internal/zk"
 )
 
 var (
@@ -19,24 +21,35 @@ var (
 	ErrCampaignNotFound      = errors.New("campaign not found")
 	ErrCampaignNotActive     = errors.New("campaign is not active")
 	ErrAmountExceedsMaximum  = errors.New("donation amount exceeds campaign maximum")
+	ErrCommitmentRequired    = errors.New("commitment is required")
 	ErrInvalidDonationStatus = errors.New("invalid donation status")
+	ErrInvalidZKProof        = errors.New("invalid zk proof")
 )
 
 type Service struct {
 	repository         *Repository
 	campaignRepository *campaign.Repository
 	paillierPublicKey  *paillier.PublicKey
+	zkVerifier         *zk.Verifier
+	blockchainRegistry *blockchain.Registry
+	blockchainSigner   *blockchain.Signer
 }
 
 func NewService(
 	repository *Repository,
 	campaignRepository *campaign.Repository,
 	paillierPublicKey *paillier.PublicKey,
+	zkVerifier *zk.Verifier,
+	blockchainRegistry *blockchain.Registry,
+	blockchainSigner *blockchain.Signer,
 ) *Service {
 	return &Service{
 		repository:         repository,
 		campaignRepository: campaignRepository,
 		paillierPublicKey:  paillierPublicKey,
+		zkVerifier:         zkVerifier,
+		blockchainRegistry: blockchainRegistry,
+		blockchainSigner:   blockchainSigner,
 	}
 }
 
@@ -45,8 +58,11 @@ func (s *Service) Create(
 	campaignID uuid.UUID,
 	donorID uuid.UUID,
 	amount string,
+	providedCommitment string,
+	proof zk.Proof,
 ) (*Donation, error) {
 	amount = strings.TrimSpace(amount)
+	providedCommitment = strings.TrimSpace(providedCommitment)
 
 	if amount == "" {
 		return nil, ErrAmountRequired
@@ -54,6 +70,10 @@ func (s *Service) Create(
 
 	if !isValidAmount(amount) {
 		return nil, ErrInvalidAmount
+	}
+
+	if providedCommitment == "" {
+		return nil, ErrCommitmentRequired
 	}
 
 	campaignData, err := s.campaignRepository.FindByID(
@@ -72,22 +92,28 @@ func (s *Service) Create(
 		return nil, ErrAmountExceedsMaximum
 	}
 
+	// Verify the ZK proof using trusted campaign data.
+	// campaign_max is taken from the database, not from the client.
+	if s.zkVerifier == nil {
+		return nil, errors.New("zk verifier is not configured")
+	}
+
+	publicInputs := zk.PublicInputs{
+		CampaignMax: campaignData.MaxDonation,
+		Commitment:  providedCommitment,
+	}
+
+	if err := s.zkVerifier.VerifyProof(
+		ctx,
+		proof,
+		publicInputs,
+	); err != nil {
+		return nil, ErrInvalidZKProof
+	}
+
 	message, ok := new(big.Int).SetString(amount, 10)
 	if !ok {
 		return nil, ErrInvalidAmount
-	}
-
-	secret, err := commitment.GenerateSecret()
-	if err != nil {
-		return nil, err
-	}
-
-	donationCommitment, err := commitment.Create(
-		amount,
-		secret,
-	)
-	if err != nil {
-		return nil, err
 	}
 
 	if s.paillierPublicKey == nil {
@@ -99,20 +125,79 @@ func (s *Service) Create(
 		return nil, err
 	}
 
+	proofJSON, err := json.Marshal(proof)
+	if err != nil {
+		return nil, err
+	}
+
+	// Store the donation first as pending.
 	donation, err := s.repository.Create(
 		ctx,
 		campaignID,
 		donorID,
-		donationCommitment,
+		providedCommitment,
 		encryptedAmount.String(),
+		string(proofJSON),
 	)
 	if err != nil {
 		return nil, err
 	}
 
+	if s.blockchainRegistry == nil {
+		return nil, errors.New("blockchain registry is not configured")
+	}
+
+	if s.blockchainSigner == nil {
+		return nil, errors.New("blockchain signer is not configured")
+	}
+
+	// Prepare the blockchain payload using the same
+	// ciphertext and ZK proof stored in the database.
+	payload := blockchain.NewDonationPayload(
+		campaignID.String(),
+		providedCommitment,
+		encryptedAmount.String(),
+		string(proofJSON),
+	)
+
+	// Record the donation on-chain and wait until
+	// the transaction is mined successfully.
+	txHash, err := s.blockchainRegistry.RecordDonation(
+		ctx,
+		s.blockchainSigner,
+		payload,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	// Store the confirmed blockchain transaction hash.
+	if err := s.repository.UpdateTxHash(
+		ctx,
+		donation.ID,
+		txHash,
+	); err != nil {
+		return nil, err
+	}
+
+	// The blockchain transaction has already been mined
+	// successfully, so the donation can be marked confirmed.
+	if err := s.repository.UpdateStatus(
+		ctx,
+		donation.ID,
+		"confirmed",
+	); err != nil {
+		return nil, err
+	}
+
+	// Aggregate only confirmed donations.
 	if err := s.Aggregate(ctx, campaignID); err != nil {
 		return nil, err
 	}
+
+	// Reflect the final state in the returned object.
+	donation.TxHash = txHash
+	donation.Status = "confirmed"
 
 	return donation, nil
 }

@@ -36,6 +36,7 @@ func (r *Repository) Create(
 	donorID uuid.UUID,
 	commitment string,
 	encryptedAmount string,
+	zkProof string,
 ) (*Donation, error) {
 	donation := &Donation{
 		ID: uuid.New(),
@@ -45,14 +46,15 @@ func (r *Repository) Create(
 		ctx,
 		`
 		INSERT INTO donations (
-			id,
-			campaign_id,
-			donor_id,
-			commitment,
-			encrypted_amount,
-			status
+				id,
+				campaign_id,
+				donor_id,
+				commitment,
+				encrypted_amount,
+				zk_proof,
+				status
 		)
-		VALUES ($1, $2, $3, $4, $5, 'pending')
+		VALUES ($1, $2, $3, $4, $5, $6, 'pending')
 		RETURNING
 			id,
 			campaign_id,
@@ -69,6 +71,7 @@ func (r *Repository) Create(
 		donorID,
 		commitment,
 		encryptedAmount,
+		zkProof,
 	).Scan(
 		&donation.ID,
 		&donation.CampaignID,
@@ -248,6 +251,25 @@ func (r *Repository) UpdateStatus(
 		WHERE id = $2
 		`,
 		status,
+		donationID,
+	)
+
+	return err
+}
+
+func (r *Repository) UpdateTxHash(
+	ctx context.Context,
+	donationID uuid.UUID,
+	txHash string,
+) error {
+	_, err := r.db.Exec(
+		ctx,
+		`
+        UPDATE donations
+        SET tx_hash = $1
+        WHERE id = $2
+        `,
+		txHash,
 		donationID,
 	)
 

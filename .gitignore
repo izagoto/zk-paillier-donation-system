@@ -20,3 +20,9 @@ out/
 
 # OS
 .DS_Store
+# ZK generated build artifacts
+zk/build/
+
+# Hardhat generated artifacts
+blockchain/artifacts/
+blockchain/cache/

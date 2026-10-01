@@ -7,15 +7,20 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/izagoto/zk-paillier-donation-system/internal/auth"
+	"github.com/izagoto/zk-paillier-donation-system/internal/blockchain"
 	"github.com/izagoto/zk-paillier-donation-system/internal/campaign"
 	"github.com/izagoto/zk-paillier-donation-system/internal/crypto/paillier"
 	"github.com/izagoto/zk-paillier-donation-system/internal/donation"
+	"github.com/izagoto/zk-paillier-donation-system/internal/zk"
 )
 
 func Setup(
 	db *pgxpool.Pool,
 	jwtSecret string,
 	paillierPublicKey *paillier.PublicKey,
+	zkVerifier *zk.Verifier,
+	blockchainRegistry *blockchain.Registry,
+	blockchainSigner *blockchain.Signer,
 ) *gin.Engine {
 	r := gin.Default()
 
@@ -77,6 +82,9 @@ func Setup(
 		donationRepository,
 		campaignRepository,
 		paillierPublicKey,
+		zkVerifier,
+		blockchainRegistry,
+		blockchainSigner,
 	)
 
 	donationHandler := donation.NewHandler(donationService)
@@ -89,6 +97,6 @@ func Setup(
 			protectedDonationRoutes.POST("/:id/confirm", donationHandler.Confirm)
 		}
 	}
-	
+
 	return r
 }
