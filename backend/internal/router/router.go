@@ -108,6 +108,7 @@ func Setup(
 			)
 			{
 				protectedCampaignRoutes.POST("", campaignHandler.Create)
+				protectedCampaignRoutes.PATCH("/:id", campaignHandler.Update)
 			}
 		}
 
@@ -119,10 +120,16 @@ func Setup(
 				auth.RequireRole(auth.RoleDonor, auth.RoleAdmin),
 				donationHandler.FindMine,
 			)
+			meRoutes.GET(
+				"/organizer/donation-stats",
+				auth.RequireRole(auth.RoleOrganizer, auth.RoleAdmin),
+				donationHandler.OrganizerDonationStats,
+			)
 		}
 
 		donationRoutes := api.Group("/donations")
 		{
+			donationRoutes.GET("/:id/verify", donationHandler.VerifyByID)
 			donationRoutes.GET("/:id", donationHandler.FindByID)
 
 			protectedDonationRoutes := donationRoutes.Group("")

@@ -1,6 +1,7 @@
 import { Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { AggregateSummary, Campaign } from '../api/client';
+import { CampaignCover } from './CampaignCover';
 import { campaignProgressPercent } from '../lib/campaignProgress';
 import { formatAmount } from '../lib/format';
 import { ButtonLink } from './workspace/Button';
@@ -21,12 +22,18 @@ export function CampaignCard({ campaign, aggregate }: Props) {
 
   return (
     <article className="tg-campaign-card flex flex-col">
-      <div
-        className="-mx-4 -mt-4 mb-3 h-28 rounded-t-lg bg-gradient-to-br from-slate-100 to-slate-200/80"
-        aria-hidden
+      <CampaignCover
+        imageUrl={campaign.image_url}
+        title={campaign.title}
+        className="-mx-4 -mt-4 mb-3 h-28 w-[calc(100%+2rem)] rounded-t-lg"
       />
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <StatusBadge status={campaign.status} />
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <StatusBadge status={campaign.status} />
+          {campaign.category ? (
+            <span className="text-xs text-zinc-500">{campaign.category}</span>
+          ) : null}
+        </div>
         <span className="text-xs font-medium tabular-nums text-zinc-500">
           {progress}%
         </span>

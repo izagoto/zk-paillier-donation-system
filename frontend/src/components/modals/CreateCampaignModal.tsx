@@ -19,6 +19,9 @@ export function CreateCampaignModal({ open, onClose, onCreated }: Props) {
   const [description, setDescription] = useState('');
   const [targetAmount, setTargetAmount] = useState('');
   const [maxDonation, setMaxDonation] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
+  const [category, setCategory] = useState('');
+  const [location, setLocation] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -27,6 +30,9 @@ export function CreateCampaignModal({ open, onClose, onCreated }: Props) {
     setDescription('');
     setTargetAmount('');
     setMaxDonation('');
+    setImageUrl('');
+    setCategory('');
+    setLocation('');
     setError('');
     setLoading(false);
   }
@@ -53,6 +59,9 @@ export function CreateCampaignModal({ open, onClose, onCreated }: Props) {
           description,
           target_amount: parseAmountInput(targetAmount),
           max_donation: parseAmountInput(maxDonation),
+          image_url: imageUrl,
+          category,
+          location,
         },
       });
       reset();
@@ -89,6 +98,32 @@ export function CreateCampaignModal({ open, onClose, onCreated }: Props) {
             onChange={(e) => setDescription(e.target.value)}
             rows={4}
             placeholder="Ceritakan tujuan dan penggunaan dana secara singkat."
+            disabled={loading}
+          />
+        </FormField>
+        <div className="grid gap-5 sm:grid-cols-2">
+          <FormField label="Kategori">
+            <TextInput
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              placeholder="Pendidikan, kesehatan, …"
+              disabled={loading}
+            />
+          </FormField>
+          <FormField label="Lokasi">
+            <TextInput
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              placeholder="Kota atau wilayah"
+              disabled={loading}
+            />
+          </FormField>
+        </div>
+        <FormField label="URL gambar (opsional)">
+          <TextInput
+            value={imageUrl}
+            onChange={(e) => setImageUrl(e.target.value)}
+            placeholder="https://…"
             disabled={loading}
           />
         </FormField>

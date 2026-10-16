@@ -15,9 +15,26 @@ type Campaign struct {
 	TargetAmount string
 	MaxDonation  string
 	Status       string
+	ImageURL     string
+	Category     string
+	Location     string
 	CreatedBy    uuid.UUID
 	CreatedAt    time.Time
 }
+
+const campaignSelectColumns = `
+	id,
+	title,
+	description,
+	target_amount,
+	max_donation,
+	status,
+	COALESCE(image_url, ''),
+	COALESCE(category, ''),
+	COALESCE(location, ''),
+	created_by,
+	created_at
+`
 
 type Repository struct {
 	db *pgxpool.Pool
@@ -36,6 +53,9 @@ func (r *Repository) Create(
 	description string,
 	targetAmount string,
 	maxDonation string,
+	imageURL string,
+	category string,
+	location string,
 	createdBy uuid.UUID,
 ) (*Campaign, error) {
 	campaign := &Campaign{ID: id}
@@ -50,25 +70,23 @@ func (r *Repository) Create(
 			target_amount,
 			max_donation,
 			status,
+			image_url,
+			category,
+			location,
 			created_by
 		)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 		RETURNING
-			id,
-			title,
-			description,
-			target_amount,
-			max_donation,
-			status,
-			created_by,
-			created_at
-		`,
+		`+campaignSelectColumns,
 		campaign.ID,
 		title,
 		description,
 		targetAmount,
 		maxDonation,
 		"active",
+		nullIfEmpty(imageURL),
+		nullIfEmpty(category),
+		nullIfEmpty(location),
 		createdBy,
 	).Scan(
 		&campaign.ID,
@@ -77,6 +95,9 @@ func (r *Repository) Create(
 		&campaign.TargetAmount,
 		&campaign.MaxDonation,
 		&campaign.Status,
+		&campaign.ImageURL,
+		&campaign.Category,
+		&campaign.Location,
 		&campaign.CreatedBy,
 		&campaign.CreatedAt,
 	)
@@ -94,14 +115,7 @@ func (r *Repository) FindAll(
 		ctx,
 		`
 		SELECT
-			id,
-			title,
-			description,
-			target_amount,
-			max_donation,
-			status,
-			created_by,
-			created_at
+		`+campaignSelectColumns+`
 		FROM campaigns
 		ORDER BY created_at DESC
 		`,
@@ -123,6 +137,9 @@ func (r *Repository) FindAll(
 			&campaign.TargetAmount,
 			&campaign.MaxDonation,
 			&campaign.Status,
+			&campaign.ImageURL,
+			&campaign.Category,
+			&campaign.Location,
 			&campaign.CreatedBy,
 			&campaign.CreatedAt,
 		)
@@ -150,14 +167,7 @@ func (r *Repository) FindByID(
 		ctx,
 		`
 		SELECT
-			id,
-			title,
-			description,
-			target_amount,
-			max_donation,
-			status,
-			created_by,
-			created_at
+		`+campaignSelectColumns+`
 		FROM campaigns
 		WHERE id = $1
 		`,
@@ -169,6 +179,69 @@ func (r *Repository) FindByID(
 		&campaign.TargetAmount,
 		&campaign.MaxDonation,
 		&campaign.Status,
+		&campaign.ImageURL,
+		&campaign.Category,
+		&campaign.Location,
+		&campaign.CreatedBy,
+		&campaign.CreatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return campaign, nil
+}
+
+func nullIfEmpty(value string) interface{} {
+	if value == "" {
+		return nil
+	}
+	return value
+}
+
+func (r *Repository) Update(
+	ctx context.Context,
+	id uuid.UUID,
+	title string,
+	description string,
+	status string,
+	imageURL string,
+	category string,
+	location string,
+) (*Campaign, error) {
+	campaign := &Campaign{}
+
+	err := r.db.QueryRow(
+		ctx,
+		`
+		UPDATE campaigns
+		SET
+			title = $2,
+			description = $3,
+			status = $4,
+			image_url = $5,
+			category = $6,
+			location = $7
+		WHERE id = $1
+		RETURNING
+		`+campaignSelectColumns,
+		id,
+		title,
+		description,
+		status,
+		nullIfEmpty(imageURL),
+		nullIfEmpty(category),
+		nullIfEmpty(location),
+	).Scan(
+		&campaign.ID,
+		&campaign.Title,
+		&campaign.Description,
+		&campaign.TargetAmount,
+		&campaign.MaxDonation,
+		&campaign.Status,
+		&campaign.ImageURL,
+		&campaign.Category,
+		&campaign.Location,
 		&campaign.CreatedBy,
 		&campaign.CreatedAt,
 	)

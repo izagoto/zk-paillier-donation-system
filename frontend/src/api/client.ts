@@ -69,6 +69,9 @@ export type Campaign = {
   target_amount: string;
   max_donation: string;
   status: string;
+  image_url?: string;
+  category?: string;
+  location?: string;
   created_by: string;
   created_at: string;
 };
@@ -78,9 +81,15 @@ export type Donation = {
   campaign_id: string;
   commitment: string;
   encrypted_amount: string;
+  amount?: string;
   tx_hash: string;
   status: string;
   created_at: string;
+};
+
+export type DayDonationStat = {
+  date: string;
+  count: number;
 };
 
 export type ZKProof = {

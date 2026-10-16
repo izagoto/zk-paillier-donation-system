@@ -1,4 +1,4 @@
-import { ShieldCheck, Users } from 'lucide-react';
+import { Link2, Pencil, ShieldCheck, Users } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
@@ -7,7 +7,9 @@ import {
   type Campaign,
   type Donation,
 } from '../api/client';
-import { DonateCampaignModal } from '../components/modals/DonateCampaignModal';
+import { CampaignCover } from '../components/CampaignCover';
+import { EditCampaignModal } from '../components/modals/EditCampaignModal';
+import { copyText } from '../lib/copyText';
 import { Spinner } from '../components/ui/Spinner';
 import { Button, ButtonLink } from '../components/workspace/Button';
 import { PageAlert } from '../components/workspace/PageAlert';
@@ -31,7 +33,8 @@ export function CampaignDetailPage() {
   const [aggregate, setAggregate] = useState<AggregateSummary | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
-  const [donateModalOpen, setDonateModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [shareHint, setShareHint] = useState('');
   const [tab, setTab] = useState<DetailTab>('about');
 
   const load = useCallback(async () => {
@@ -94,6 +97,19 @@ export function CampaignDetailPage() {
   const isOrganizerView =
     user && canCreateCampaign(user.role) && !canDonate(user.role);
 
+  const isOwner =
+    user && campaign.created_by === user.id && canCreateCampaign(user.role);
+
+  async function shareCampaign() {
+    if (!id) {
+      return;
+    }
+    const url = `${window.location.origin}/campaigns/${id}`;
+    const ok = await copyText(url);
+    setShareHint(ok ? 'Tautan disalin ke clipboard.' : 'Gagal menyalin tautan.');
+    window.setTimeout(() => setShareHint(''), 3000);
+  }
+
   const progressPct = campaignProgressPercent(campaign, aggregate);
   const donorCount = aggregate?.donation_count ?? 0;
 
@@ -104,9 +120,30 @@ export function CampaignDetailPage() {
     <PageShell
       title={campaign.title}
       breadcrumb={{ entityTitle: campaign.title }}
-      actions={<StatusBadge status={campaign.status} />}
+      actions={
+        <div className="flex flex-wrap items-center gap-2">
+          <StatusBadge status={campaign.status} />
+          {isOwner ? (
+            <Button
+              variant="secondary"
+              className="h-9"
+              onClick={() => setEditModalOpen(true)}
+            >
+              <Pencil className="h-4 w-4" aria-hidden />
+              Kelola
+            </Button>
+          ) : null}
+          <Button variant="secondary" className="h-9" onClick={() => void shareCampaign()}>
+            <Link2 className="h-4 w-4" aria-hidden />
+            Bagikan
+          </Button>
+        </div>
+      }
     >
       {error ? <PageAlert message={error} onRetry={() => void load()} /> : null}
+      {shareHint ? (
+        <p className="mb-2 text-sm text-emerald-700">{shareHint}</p>
+      ) : null}
 
       <ButtonLink
         to={backTo}
@@ -119,9 +156,10 @@ export function CampaignDetailPage() {
       <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
         <div className="min-w-0 space-y-5">
           <section className="overflow-hidden rounded-lg border border-trust-border bg-white shadow-[var(--shadow-trust-card)]">
-            <div
-              className="h-40 bg-gradient-to-br from-slate-100 via-slate-50 to-blue-50/40 sm:h-48"
-              aria-hidden
+            <CampaignCover
+              imageUrl={campaign.image_url}
+              title={campaign.title}
+              className="h-40 w-full sm:h-48"
             />
             <div className="p-5 sm:p-6">
               <div className="flex flex-wrap items-center gap-2">
@@ -181,6 +219,18 @@ export function CampaignDetailPage() {
                 {campaign.description || 'Belum ada deskripsi tambahan.'}
               </p>
               <dl className="mt-6 grid gap-4 border-t border-zinc-100 pt-6 text-sm sm:grid-cols-2">
+                {campaign.category ? (
+                  <div>
+                    <dt className="text-zinc-500">Kategori</dt>
+                    <dd className="mt-1 font-medium text-zinc-900">{campaign.category}</dd>
+                  </div>
+                ) : null}
+                {campaign.location ? (
+                  <div>
+                    <dt className="text-zinc-500">Lokasi</dt>
+                    <dd className="mt-1 font-medium text-zinc-900">{campaign.location}</dd>
+                  </div>
+                ) : null}
                 <div>
                   <dt className="text-zinc-500">Target</dt>
                   <dd className="mt-1 font-medium text-zinc-900">
@@ -240,6 +290,18 @@ export function CampaignDetailPage() {
                           ? truncateMiddle(donation.tx_hash, 10, 8)
                           : '—',
                     },
+                    {
+                      id: 'verify',
+                      header: 'Verifikasi',
+                      render: (donation) => (
+                        <Link
+                          to={`/verify/donation/${donation.id}`}
+                          className="text-xs font-semibold text-trust-primary hover:underline"
+                        >
+                          Lihat bukti
+                        </Link>
+                      ),
+                    },
                   ]}
                 />
               )}
@@ -280,6 +342,18 @@ export function CampaignDetailPage() {
                       render: (d) =>
                         d.tx_hash ? truncateMiddle(d.tx_hash, 12, 10) : '—',
                     },
+                    {
+                      id: 'verify',
+                      header: 'Verifikasi',
+                      render: (d) => (
+                        <Link
+                          to={`/verify/donation/${d.id}`}
+                          className="text-xs font-semibold text-trust-primary hover:underline"
+                        >
+                          Publik
+                        </Link>
+                      ),
+                    },
                   ]}
                 />
                 </div>
@@ -295,9 +369,13 @@ export function CampaignDetailPage() {
               <p className="mt-1 text-xs text-zinc-500">
                 Hingga Rp {formatAmount(campaign.max_donation)} per donasi
               </p>
-              <Button block className="mt-4" onClick={() => setDonateModalOpen(true)}>
+              <ButtonLink
+                to={`/campaigns/${id}/donate`}
+                block
+                className="mt-4"
+              >
                 Donasi sekarang
-              </Button>
+              </ButtonLink>
             </div>
           ) : null}
 
@@ -343,16 +421,15 @@ export function CampaignDetailPage() {
         </aside>
       </div>
 
-      {canShowDonate && id ? (
-        <DonateCampaignModal
-          open={donateModalOpen}
-          onClose={() => setDonateModalOpen(false)}
-          campaignId={id}
-          campaignTitle={campaign.title}
-          maxDonation={campaign.max_donation}
-          onSuccess={() => void load()}
+      {isOwner ? (
+        <EditCampaignModal
+          open={editModalOpen}
+          campaign={campaign}
+          onClose={() => setEditModalOpen(false)}
+          onUpdated={(updated) => setCampaign(updated)}
         />
       ) : null}
+
     </PageShell>
   );
 }

@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import {
+  RequireAuditor,
   RequireDonor,
   RequireOrganizer,
 } from './components/RequireAuth';
@@ -17,6 +18,9 @@ import { MyDonationsPage } from './pages/MyDonationsPage';
 import { OrganizerDashboardPage } from './pages/OrganizerDashboardPage';
 import { OrganizerDonationsPage } from './pages/OrganizerDonationsPage';
 import { ProfilePage } from './pages/ProfilePage';
+import { DonateCampaignPage } from './pages/DonateCampaignPage';
+import { VerifyDonationPage } from './pages/VerifyDonationPage';
+import { AuditorDashboardPage } from './pages/AuditorDashboardPage';
 
 function ProtectedOrganizer({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -50,7 +54,9 @@ function AppRoutes() {
             </ProtectedOrganizer>
           }
         />
+        <Route path="/campaigns/:id/donate" element={<DonateCampaignPage />} />
         <Route path="/campaigns/:id" element={<CampaignDetailPage />} />
+        <Route path="/verify/donation/:id" element={<VerifyDonationPage />} />
         <Route path="/campaigns" element={<CampaignListPage />} />
         <Route
           path="/donor"
@@ -82,6 +88,14 @@ function AppRoutes() {
             <RequireOrganizer>
               <OrganizerDonationsPage />
             </RequireOrganizer>
+          }
+        />
+        <Route
+          path="/auditor"
+          element={
+            <RequireAuditor>
+              <AuditorDashboardPage />
+            </RequireAuditor>
           }
         />
         <Route

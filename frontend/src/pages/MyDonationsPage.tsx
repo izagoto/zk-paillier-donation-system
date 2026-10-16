@@ -10,7 +10,7 @@ import { PageShell } from '../components/workspace/PageShell';
 import { StatusBadge } from '../components/workspace/StatusBadge';
 import { TableSkeleton } from '../components/workspace/TableSkeleton';
 import { NAV } from '../lib/navigation';
-import { formatDateTime, truncateMiddle } from '../lib/format';
+import { formatAmount, formatDateTime, truncateMiddle } from '../lib/format';
 
 export function MyDonationsPage() {
   const [donations, setDonations] = useState<Donation[]>([]);
@@ -83,6 +83,15 @@ export function MyDonationsPage() {
               ),
             },
             {
+              id: 'amount',
+              header: 'Nominal',
+              cellClassName: 'whitespace-nowrap font-medium',
+              render: (donation) =>
+                donation.amount
+                  ? `Rp ${formatAmount(donation.amount)}`
+                  : '—',
+            },
+            {
               id: 'status',
               header: 'Status',
               render: (donation) => (
@@ -104,6 +113,18 @@ export function MyDonationsPage() {
                 donation.tx_hash
                   ? truncateMiddle(donation.tx_hash, 10, 8)
                   : '—',
+            },
+            {
+              id: 'verify',
+              header: 'Bukti publik',
+              render: (donation) => (
+                <Link
+                  to={`/verify/donation/${donation.id}`}
+                  className="text-xs font-semibold text-trust-primary hover:underline"
+                >
+                  Verifikasi
+                </Link>
+              ),
             },
             {
               id: 'time',

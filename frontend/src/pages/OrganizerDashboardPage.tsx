@@ -1,5 +1,7 @@
 import { CheckCircle2, FolderKanban, Plus } from 'lucide-react';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { apiRequest, type DayDonationStat } from '../api/client';
+import { OrganizerDonationChart } from '../components/OrganizerDonationChart';
 import { CampaignCard } from '../components/CampaignCard';
 import { ButtonLink } from '../components/workspace/Button';
 import { PageAlert } from '../components/workspace/PageAlert';
@@ -27,6 +29,16 @@ export function OrganizerDashboardPage() {
 
   const previewIds = useMemo(() => mine.slice(0, 4).map((c) => c.id), [mine]);
   const { aggregates } = useCampaignAggregates(previewIds);
+  const [stats, setStats] = useState<DayDonationStat[]>([]);
+
+  useEffect(() => {
+    apiRequest<{ data: DayDonationStat[] }>(
+      '/api/me/organizer/donation-stats?days=7',
+      { auth: true },
+    )
+      .then((res) => setStats(res.data))
+      .catch(() => setStats([]));
+  }, []);
 
   const greeting = user?.email
     ? `Halo, ${displayNameFromEmail(user.email)}`
@@ -60,6 +72,10 @@ export function OrganizerDashboardPage() {
             accent="emerald"
           />
         </div>
+
+        <Panel title="Donasi 7 hari terakhir" subtitle="Donasi terkonfirmasi ke campaign Anda">
+          <OrganizerDonationChart data={stats} days={7} />
+        </Panel>
 
         <Panel
           title="Campaign terbaru"

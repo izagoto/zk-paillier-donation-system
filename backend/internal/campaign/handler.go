@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+
 )
 
 type Handler struct {
@@ -25,6 +26,18 @@ type createCampaignRequest struct {
 	Description  string `json:"description"`
 	TargetAmount string `json:"target_amount"`
 	MaxDonation  string `json:"max_donation"`
+	ImageURL     string `json:"image_url"`
+	Category     string `json:"category"`
+	Location     string `json:"location"`
+}
+
+type updateCampaignRequest struct {
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	Status      string `json:"status"`
+	ImageURL    string `json:"image_url"`
+	Category    string `json:"category"`
+	Location    string `json:"location"`
 }
 
 type campaignResponse struct {
@@ -34,6 +47,9 @@ type campaignResponse struct {
 	TargetAmount string    `json:"target_amount"`
 	MaxDonation  string    `json:"max_donation"`
 	Status       string    `json:"status"`
+	ImageURL     string    `json:"image_url"`
+	Category     string    `json:"category"`
+	Location     string    `json:"location"`
 	CreatedBy    uuid.UUID `json:"created_by"`
 	CreatedAt    string    `json:"created_at"`
 }
@@ -46,6 +62,9 @@ func toCampaignResponse(campaign *Campaign) campaignResponse {
 		TargetAmount: campaign.TargetAmount,
 		MaxDonation:  campaign.MaxDonation,
 		Status:       campaign.Status,
+		ImageURL:     campaign.ImageURL,
+		Category:     campaign.Category,
+		Location:     campaign.Location,
 		CreatedBy:    campaign.CreatedBy,
 		CreatedAt:    campaign.CreatedAt.Format(time.RFC3339),
 	}
@@ -83,6 +102,9 @@ func (h *Handler) Create(c *gin.Context) {
 		req.Description,
 		req.TargetAmount,
 		req.MaxDonation,
+		req.ImageURL,
+		req.Category,
+		req.Location,
 		userID,
 	)
 	if err != nil {
@@ -158,6 +180,76 @@ func (h *Handler) FindByID(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "internal server error",
 		})
+		return
+	}
+
+	c.JSON(http.StatusOK, toCampaignResponse(campaign))
+}
+
+func (h *Handler) Update(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid campaign id",
+		})
+		return
+	}
+
+	var req updateCampaignRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid request body",
+		})
+		return
+	}
+
+	userIDValue, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "user identity not found",
+		})
+		return
+	}
+
+	userID, ok := userIDValue.(uuid.UUID)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "invalid user identity",
+		})
+		return
+	}
+
+	roleValue, _ := c.Get("user_role")
+	role, _ := roleValue.(string)
+
+	campaign, err := h.service.Update(
+		c.Request.Context(),
+		id,
+		userID,
+		role,
+		UpdateInput{
+			Title:       req.Title,
+			Description: req.Description,
+			Status:      req.Status,
+			ImageURL:    req.ImageURL,
+			Category:    req.Category,
+			Location:    req.Location,
+		},
+	)
+	if err != nil {
+		switch {
+		case errors.Is(err, ErrCampaignNotFound):
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		case errors.Is(err, ErrForbidden):
+			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		case errors.Is(err, ErrTitleRequired),
+			errors.Is(err, ErrInvalidStatus):
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "internal server error",
+			})
+		}
 		return
 	}
 

@@ -2,6 +2,7 @@ package donation
 
 import (
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -36,6 +37,7 @@ type donationResponse struct {
 	CampaignID      uuid.UUID `json:"campaign_id"`
 	Commitment      string    `json:"commitment"`
 	EncryptedAmount string    `json:"encrypted_amount"`
+	Amount          string    `json:"amount,omitempty"`
 	TxHash          string    `json:"tx_hash"`
 	Status          string    `json:"status"`
 	CreatedAt       string    `json:"created_at"`
@@ -51,6 +53,16 @@ func toDonationResponse(donation *Donation) donationResponse {
 		Status:          donation.Status,
 		CreatedAt:       donation.CreatedAt.Format(time.RFC3339),
 	}
+}
+
+type donationVerifyResponse struct {
+	ID            uuid.UUID `json:"id"`
+	CampaignID    uuid.UUID `json:"campaign_id"`
+	CampaignTitle string    `json:"campaign_title"`
+	Status        string    `json:"status"`
+	TxHash        string    `json:"tx_hash"`
+	Commitment    string    `json:"commitment"`
+	CreatedAt     string    `json:"created_at"`
 }
 
 func (h *Handler) Create(c *gin.Context) {
@@ -285,11 +297,85 @@ func (h *Handler) FindMine(c *gin.Context) {
 
 	responses := make([]donationResponse, 0, len(donations))
 	for i := range donations {
-		responses = append(responses, toDonationResponse(&donations[i]))
+		response := toDonationResponse(&donations[i])
+		amount, ok, err := h.service.DecryptDonationAmount(donations[i].EncryptedAmount)
+		if err == nil && ok {
+			response.Amount = amount
+		}
+		responses = append(responses, response)
 	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"data": responses,
+	})
+}
+
+func (h *Handler) VerifyByID(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid donation id",
+		})
+		return
+	}
+
+	verification, err := h.service.GetVerification(c.Request.Context(), id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "donation not found",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, donationVerifyResponse{
+		ID:            verification.ID,
+		CampaignID:    verification.CampaignID,
+		CampaignTitle: verification.CampaignTitle,
+		Status:        verification.Status,
+		TxHash:        verification.TxHash,
+		Commitment:    verification.Commitment,
+		CreatedAt:     verification.CreatedAt.Format(time.RFC3339),
+	})
+}
+
+func (h *Handler) OrganizerDonationStats(c *gin.Context) {
+	userIDValue, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "unauthorized",
+		})
+		return
+	}
+
+	userID, ok := userIDValue.(uuid.UUID)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "invalid user identity",
+		})
+		return
+	}
+
+	days := 7
+	if raw := c.Query("days"); raw != "" {
+		if parsed, err := strconv.Atoi(raw); err == nil {
+			days = parsed
+		}
+	}
+
+	stats, err := h.service.OrganizerDonationStats(
+		c.Request.Context(),
+		userID,
+		days,
+	)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "failed to load stats",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": stats,
 	})
 }
 

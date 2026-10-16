@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/izagoto/zk-paillier-donation-system/internal/auth"
 	"github.com/izagoto/zk-paillier-donation-system/internal/blockchain"
 )
 
@@ -16,6 +17,9 @@ var (
 	ErrInvalidTargetAmount      = errors.New("invalid target amount")
 	ErrInvalidMaxDonation       = errors.New("invalid max donation")
 	ErrMaxDonationExceedsTarget = errors.New("max donation cannot exceed target amount")
+	ErrCampaignNotFound         = errors.New("campaign not found")
+	ErrForbidden                = errors.New("forbidden")
+	ErrInvalidStatus            = errors.New("invalid campaign status")
 )
 
 type Service struct {
@@ -42,6 +46,9 @@ func (s *Service) Create(
 	description string,
 	targetAmount string,
 	maxDonation string,
+	imageURL string,
+	category string,
+	location string,
 	createdBy uuid.UUID,
 ) (*Campaign, error) {
 	title = strings.TrimSpace(title)
@@ -92,7 +99,62 @@ func (s *Service) Create(
 		description,
 		targetAmount,
 		maxDonation,
+		imageURL,
+		category,
+		location,
 		createdBy,
+	)
+}
+
+type UpdateInput struct {
+	Title       string
+	Description string
+	Status      string
+	ImageURL    string
+	Category    string
+	Location    string
+}
+
+func (s *Service) Update(
+	ctx context.Context,
+	campaignID uuid.UUID,
+	actorID uuid.UUID,
+	actorRole string,
+	input UpdateInput,
+) (*Campaign, error) {
+	existing, err := s.repository.FindByID(ctx, campaignID)
+	if err != nil {
+		return nil, ErrCampaignNotFound
+	}
+
+	if actorRole != auth.RoleAdmin && existing.CreatedBy != actorID {
+		return nil, ErrForbidden
+	}
+
+	title := strings.TrimSpace(input.Title)
+	if title == "" {
+		return nil, ErrTitleRequired
+	}
+
+	description := strings.TrimSpace(input.Description)
+	status := strings.TrimSpace(input.Status)
+	if status == "" {
+		status = existing.Status
+	}
+
+	if status != "active" && status != "closed" {
+		return nil, ErrInvalidStatus
+	}
+
+	return s.repository.Update(
+		ctx,
+		campaignID,
+		title,
+		description,
+		status,
+		strings.TrimSpace(input.ImageURL),
+		strings.TrimSpace(input.Category),
+		strings.TrimSpace(input.Location),
 	)
 }
 

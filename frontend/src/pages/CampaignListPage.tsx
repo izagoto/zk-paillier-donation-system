@@ -26,22 +26,37 @@ export function CampaignListPage() {
   const { campaigns, loading, error, reload } = useCampaigns();
   const [filter, setFilter] = useState<'all' | 'active'>('all');
   const [search, setSearch] = useState('');
+  const [category, setCategory] = useState('');
+
+  const categories = useMemo(() => {
+    const set = new Set<string>();
+    for (const c of campaigns) {
+      if (c.category?.trim()) {
+        set.add(c.category.trim());
+      }
+    }
+    return [...set].sort();
+  }, [campaigns]);
 
   const filtered = useMemo(() => {
     let list = campaigns;
     if (filter === 'active') {
       list = list.filter((c) => c.status === 'active');
     }
+    if (category) {
+      list = list.filter((c) => (c.category ?? '').trim() === category);
+    }
     const q = search.trim().toLowerCase();
     if (q) {
       list = list.filter(
         (c) =>
           c.title.toLowerCase().includes(q) ||
-          c.description.toLowerCase().includes(q),
+          c.description.toLowerCase().includes(q) ||
+          (c.location ?? '').toLowerCase().includes(q),
       );
     }
     return list;
-  }, [campaigns, filter, search]);
+  }, [campaigns, filter, search, category]);
 
   const filteredIds = useMemo(
     () => filtered.map((c) => c.id),
@@ -79,14 +94,29 @@ export function CampaignListPage() {
               placeholder="Cari judul atau deskripsi…"
               className="w-full max-w-md"
             />
-            <SegmentTabs
-              value={filter}
-              onChange={setFilter}
-              options={[
-                { value: 'all', label: `Semua (${campaigns.length})` },
-                { value: 'active', label: `Aktif (${activeCount})` },
-              ]}
-            />
+            <div className="flex flex-wrap items-center gap-3">
+              {categories.length > 0 ? (
+                <select
+                  className="tg-input h-9 w-auto min-w-[10rem] text-sm"
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  aria-label="Filter kategori"
+                >
+                  <option value="">Semua kategori</option>
+                  {categories.map((cat) => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+              ) : null}
+              <SegmentTabs
+                value={filter}
+                onChange={setFilter}
+                options={[
+                  { value: 'all', label: `Semua (${campaigns.length})` },
+                  { value: 'active', label: `Aktif (${activeCount})` },
+                ]}
+              />
+            </div>
           </>
         }
       >

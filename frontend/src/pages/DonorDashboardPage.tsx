@@ -12,7 +12,7 @@ import { useAuth } from '../context/AuthContext';
 import { useCampaignAggregates } from '../hooks/useCampaignAggregates';
 import { NAV } from '../lib/navigation';
 import { displayNameFromEmail } from '../lib/displayName';
-import { statusLabel } from '../lib/format';
+import { formatAmount, statusLabel } from '../lib/format';
 
 export function DonorDashboardPage() {
   const { user } = useAuth();
@@ -55,6 +55,20 @@ export function DonorDashboardPage() {
     () => new Set(donations.map((d) => d.campaign_id)).size,
     [donations],
   );
+
+  const totalDonated = useMemo(() => {
+    let sum = 0n;
+    for (const d of donations) {
+      if (d.status === 'confirmed' && d.amount) {
+        try {
+          sum += BigInt(d.amount);
+        } catch {
+          /* ignore invalid */
+        }
+      }
+    }
+    return sum.toString();
+  }, [donations]);
 
   const titleById = useMemo(() => {
     const map = new Map<string, string>();
@@ -109,10 +123,10 @@ export function DonorDashboardPage() {
             accent="emerald"
           />
           <SummaryCard
-            label="Status terakhir"
-            value={loading ? '—' : String(confirmed)}
+            label="Total donasi"
+            value={loading ? '—' : `Rp ${formatAmount(totalDonated)}`}
             icon={CheckCircle2}
-            hint="Donasi terkonfirmasi"
+            hint={`${confirmed} transaksi terkonfirmasi`}
             accent="amber"
           />
         </div>

@@ -39,6 +39,8 @@ migrate -path migrations -database "$DATABASE_URL" up
 
 (`migrate` = [golang-migrate](https://github.com/golang-migrate/migrate) CLI)
 
+Setelah pull terbaru, pastikan migrasi sampai **000007** (metadata campaign: gambar, kategori, lokasi).
+
 Cek koneksi:
 
 ```bash

@@ -1,4 +1,4 @@
-import { canCreateCampaign, canDonate } from './roles';
+import { canAudit, canCreateCampaign, canDonate } from './roles';
 
 export function getPostLoginPath(role: string): string {
   if (canCreateCampaign(role)) {
@@ -6,6 +6,9 @@ export function getPostLoginPath(role: string): string {
   }
   if (canDonate(role)) {
     return '/donor';
+  }
+  if (canAudit(role)) {
+    return '/auditor';
   }
   return '/campaigns';
 }

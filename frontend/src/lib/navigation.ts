@@ -9,7 +9,7 @@ import {
   User,
 } from 'lucide-react';
 import { getPostLoginPath } from './flow';
-import { canCreateCampaign, canDonate } from './roles';
+import { canAudit, canCreateCampaign, canDonate } from './roles';
 
 /** Label navigasi & judul halaman — satu sumber agar konsisten di header, breadcrumb, dan menu. */
 export const NAV = {
@@ -116,6 +116,32 @@ export function workspaceNavGroupsForRole(role: string): NavGroup[] {
     ];
   }
 
+  if (canAudit(role) && !canCreateCampaign(role) && !canDonate(role)) {
+    return [
+      {
+        title: 'Audit',
+        items: [
+          {
+            to: '/auditor',
+            label: 'Transparansi',
+            icon: LayoutDashboard,
+            end: true,
+          },
+          {
+            to: '/campaigns',
+            label: NAV.exploreCampaigns,
+            icon: Search,
+            end: true,
+          },
+        ],
+      },
+      {
+        title: 'Akun',
+        items: [{ to: '/organizer/profile', label: NAV.profile, icon: User }],
+      },
+    ];
+  }
+
   if (canDonate(role)) {
     return [
       {
@@ -177,13 +203,26 @@ export function breadcrumbsForPath(
 ): BreadcrumbItem[] {
   const homeTo = role ? workspaceHomePath(role) : '/';
 
-  if (pathname === '/organizer' || pathname === '/donor') {
+  if (pathname === '/organizer' || pathname === '/donor' || pathname === '/auditor') {
     return [{ label: NAV.dashboard }];
   }
 
   const items: BreadcrumbItem[] = role
     ? [{ label: NAV.dashboard, to: homeTo }]
     : [{ label: NAV.home, to: '/' }];
+
+  if (pathname.startsWith('/verify/donation/')) {
+    items.push({ label: 'Verifikasi donasi' });
+    return items;
+  }
+  if (pathname.endsWith('/donate') && pathname.startsWith('/campaigns/')) {
+    const parentLabel = role && canCreateCampaign(role)
+      ? NAV.myCampaigns
+      : NAV.exploreCampaigns;
+    items.push({ label: parentLabel, to: campaignListBackPath(role) });
+    items.push({ label: 'Donasi' });
+    return items;
+  }
   if (pathname === '/campaigns' && search.includes('mine=1')) {
     items.push({ label: NAV.myCampaigns });
     return items;

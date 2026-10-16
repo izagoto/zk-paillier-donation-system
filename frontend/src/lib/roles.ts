@@ -17,3 +17,7 @@ export function canCreateCampaign(role: string): boolean {
 export function canDonate(role: string): boolean {
   return role === 'donor' || role === 'admin';
 }
+
+export function canAudit(role: string): boolean {
+  return role === 'auditor' || role === 'admin';
+}

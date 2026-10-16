@@ -551,3 +551,107 @@ func (r *Repository) UpdateAggregate(
 
 	return tx.Commit(ctx)
 }
+
+type DonationVerification struct {
+	ID            uuid.UUID
+	CampaignID    uuid.UUID
+	CampaignTitle string
+	Status        string
+	TxHash        string
+	Commitment    string
+	CreatedAt     time.Time
+}
+
+func (r *Repository) FindVerificationByID(
+	ctx context.Context,
+	id uuid.UUID,
+) (*DonationVerification, error) {
+	row := &DonationVerification{}
+
+	err := r.db.QueryRow(
+		ctx,
+		`
+		SELECT
+			d.id,
+			d.campaign_id,
+			c.title,
+			d.status,
+			COALESCE(d.tx_hash, ''),
+			d.commitment,
+			d.created_at
+		FROM donations d
+		INNER JOIN campaigns c ON c.id = d.campaign_id
+		WHERE d.id = $1
+		`,
+		id,
+	).Scan(
+		&row.ID,
+		&row.CampaignID,
+		&row.CampaignTitle,
+		&row.Status,
+		&row.TxHash,
+		&row.Commitment,
+		&row.CreatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return row, nil
+}
+
+type DayDonationCount struct {
+	Date  string `json:"date"`
+	Count int    `json:"count"`
+}
+
+func (r *Repository) CountConfirmedByDayForOrganizer(
+	ctx context.Context,
+	organizerID uuid.UUID,
+	days int,
+) ([]DayDonationCount, error) {
+	if days < 1 {
+		days = 7
+	}
+	if days > 90 {
+		days = 90
+	}
+
+	rows, err := r.db.Query(
+		ctx,
+		`
+		SELECT
+			to_char(date_trunc('day', d.created_at AT TIME ZONE 'UTC'), 'YYYY-MM-DD'),
+			COUNT(*)::int
+		FROM donations d
+		INNER JOIN campaigns c ON c.id = d.campaign_id
+		WHERE c.created_by = $1
+		  AND d.status = 'confirmed'
+		  AND d.created_at >= NOW() - ($2::int * INTERVAL '1 day')
+		GROUP BY 1
+		ORDER BY 1
+		`,
+		organizerID,
+		days,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	result := make([]DayDonationCount, 0)
+
+	for rows.Next() {
+		var item DayDonationCount
+		if err := rows.Scan(&item.Date, &item.Count); err != nil {
+			return nil, err
+		}
+		result = append(result, item)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}

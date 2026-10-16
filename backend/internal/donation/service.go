@@ -340,6 +340,44 @@ func (s *Service) FindByDonorID(
 	return s.repository.FindByDonorID(ctx, donorID)
 }
 
+func (s *Service) DecryptDonationAmount(encryptedAmount string) (string, bool, error) {
+	if s.paillierPrivateKey == nil {
+		return "", false, nil
+	}
+
+	encryptedAmount = strings.TrimSpace(encryptedAmount)
+	if encryptedAmount == "" {
+		return "", false, nil
+	}
+
+	ciphertext, ok := new(big.Int).SetString(encryptedAmount, 10)
+	if !ok {
+		return "", false, errors.New("invalid encrypted amount")
+	}
+
+	plaintext, err := s.paillierPrivateKey.Decrypt(ciphertext)
+	if err != nil {
+		return "", false, err
+	}
+
+	return plaintext.String(), true, nil
+}
+
+func (s *Service) GetVerification(
+	ctx context.Context,
+	id uuid.UUID,
+) (*DonationVerification, error) {
+	return s.repository.FindVerificationByID(ctx, id)
+}
+
+func (s *Service) OrganizerDonationStats(
+	ctx context.Context,
+	organizerID uuid.UUID,
+	days int,
+) ([]DayDonationCount, error) {
+	return s.repository.CountConfirmedByDayForOrganizer(ctx, organizerID, days)
+}
+
 func isValidAmount(value string) bool {
 	if value == "" {
 		return false
