@@ -183,6 +183,10 @@ Jangan menjalankan baris placeholder `curl ...` dari dokumentasi. Setiap registe
 - Hardhat node harus jalan; kontrak ter-deploy; `BLOCKCHAIN_CONTRACT_ADDRESS` benar.
 - Root: `circomlibjs` harus `^0.1.7` (bukan hasil `npm audit fix --force`).
 
+### Dashboard donatur: `Request failed` / `GET /api/me/donations` 404
+
+Backend masih proses lama sebelum rute `GET /api/me/donations` ada. **Stop** `go run ./cmd/server` lalu jalankan lagi dari folder `backend`. Log startup harus memuat baris `GET /api/me/donations`.
+
 ## Catatan penelitian
 
 - Proof dibuat di server (demo); bukan privasi penuh terhadap backend.

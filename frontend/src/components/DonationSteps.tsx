@@ -2,8 +2,8 @@ type Step = 'idle' | 'proof' | 'chain' | 'done';
 
 const labels: Record<Step, string> = {
   idle: 'Siap',
-  proof: 'Membuat proof zk-SNARK',
-  chain: 'Mencatat ke blockchain',
+  proof: 'Memverifikasi donasi',
+  chain: 'Mencatat transaksi',
   done: 'Selesai',
 };
 

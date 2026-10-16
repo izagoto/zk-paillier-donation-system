@@ -258,6 +258,41 @@ func (h *Handler) FindByCampaignID(c *gin.Context) {
 	})
 }
 
+func (h *Handler) FindMine(c *gin.Context) {
+	userIDValue, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "unauthorized",
+		})
+		return
+	}
+
+	userID, ok := userIDValue.(uuid.UUID)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "invalid user identity",
+		})
+		return
+	}
+
+	donations, err := h.service.FindByDonorID(c.Request.Context(), userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "failed to load donations",
+		})
+		return
+	}
+
+	responses := make([]donationResponse, 0, len(donations))
+	for i := range donations {
+		responses = append(responses, toDonationResponse(&donations[i]))
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": responses,
+	})
+}
+
 func (h *Handler) GetCampaignAggregate(c *gin.Context) {
 	campaignID, err := uuid.Parse(c.Param("id"))
 	if err != nil {

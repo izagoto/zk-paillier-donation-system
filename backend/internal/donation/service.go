@@ -333,6 +333,13 @@ func (s *Service) FindByCampaignID(
 	return s.repository.FindByCampaignID(ctx, campaignID)
 }
 
+func (s *Service) FindByDonorID(
+	ctx context.Context,
+	donorID uuid.UUID,
+) ([]Donation, error) {
+	return s.repository.FindByDonorID(ctx, donorID)
+}
+
 func isValidAmount(value string) bool {
 	if value == "" {
 		return false

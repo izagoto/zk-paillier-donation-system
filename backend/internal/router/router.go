@@ -111,6 +111,16 @@ func Setup(
 			}
 		}
 
+		meRoutes := api.Group("/me")
+		meRoutes.Use(auth.AuthMiddleware(jwtManager))
+		{
+			meRoutes.GET(
+				"/donations",
+				auth.RequireRole(auth.RoleDonor, auth.RoleAdmin),
+				donationHandler.FindMine,
+			)
+		}
+
 		donationRoutes := api.Group("/donations")
 		{
 			donationRoutes.GET("/:id", donationHandler.FindByID)

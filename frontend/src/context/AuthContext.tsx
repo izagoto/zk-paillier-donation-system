@@ -18,7 +18,7 @@ import {
 type AuthContextValue = {
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<User>;
   logout: () => void;
   refreshUser: () => Promise<void>;
 };
@@ -57,8 +57,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
     );
     setToken(result.access_token);
-    await refreshUser();
-  }, [refreshUser]);
+    const me = await apiRequest<User>('/api/auth/me', { auth: true });
+    setUser(me);
+    return me;
+  }, []);
 
   const logout = useCallback(() => {
     clearToken();

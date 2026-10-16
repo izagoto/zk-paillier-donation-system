@@ -24,7 +24,7 @@ Detail akses: [10-AKSES-LOGIN.md](10-AKSES-LOGIN.md).
 **Praktis (demo TrustGive):**
 
 1. `source backend/.env` → register `pengelola@demo.local` (`organizer`) dan `donatur@demo.local` (`donor`) lewat curl — lihat [11-LOCAL-SETUP.md](11-LOCAL-SETUP.md).
-2. Login web → hanya **pengelola** yang melihat menu buat campaign; hanya **donor** yang bisa donasi.
+2. Login web → redirect ke `/organizer` (pengelola) atau `/donor` (donatur/admin donasi); lihat [12-FRONTEND-FLOW.md](12-FRONTEND-FLOW.md).
 3. Setelah `UPDATE users SET role = ...` di DB, **logout lalu login lagi** (role ada di JWT).
 
 ## 2. Membuat campaign (saat ini)

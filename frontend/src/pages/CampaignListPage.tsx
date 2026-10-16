@@ -1,91 +1,127 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { apiRequest, type Campaign } from '../api/client';
+import { useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { Search } from 'lucide-react';
 import { CampaignCard } from '../components/CampaignCard';
-import { Alert } from '../components/ui/Alert';
-import { PageHeader } from '../components/ui/PageHeader';
-import { Spinner } from '../components/ui/Spinner';
+import { ButtonLink } from '../components/workspace/Button';
+import { DataTableCard } from '../components/workspace/DataTableCard';
+import { EmptyState } from '../components/workspace/EmptyState';
+import { PageAlert } from '../components/workspace/PageAlert';
+import { PageShell } from '../components/workspace/PageShell';
+import { SearchField } from '../components/workspace/SearchField';
+import { SegmentTabs } from '../components/workspace/SegmentTabs';
 import { useAuth } from '../context/AuthContext';
+import { useCampaignAggregates } from '../hooks/useCampaignAggregates';
+import { useCampaigns } from '../hooks/useCampaigns';
+import { NAV } from '../lib/navigation';
 import { canCreateCampaign } from '../lib/roles';
+import { MyCampaignsPage } from './MyCampaignsPage';
 
 export function CampaignListPage() {
   const { user } = useAuth();
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'active'>('all');
+  const [searchParams] = useSearchParams();
+  const mineOnly = searchParams.get('mine') === '1';
+  const showMine =
+    mineOnly && user !== null && canCreateCampaign(user.role);
 
-  useEffect(() => {
-    apiRequest<{ data: Campaign[] }>('/api/campaigns')
-      .then((result) => setCampaigns(result.data))
-      .catch((err) =>
-        setError(err instanceof Error ? err.message : 'Gagal memuat campaign'),
-      )
-      .finally(() => setLoading(false));
-  }, []);
+  const { campaigns, loading, error, reload } = useCampaigns();
+  const [filter, setFilter] = useState<'all' | 'active'>('all');
+  const [search, setSearch] = useState('');
 
   const filtered = useMemo(() => {
+    let list = campaigns;
     if (filter === 'active') {
-      return campaigns.filter((c) => c.status === 'active');
+      list = list.filter((c) => c.status === 'active');
     }
-    return campaigns;
-  }, [campaigns, filter]);
+    const q = search.trim().toLowerCase();
+    if (q) {
+      list = list.filter(
+        (c) =>
+          c.title.toLowerCase().includes(q) ||
+          c.description.toLowerCase().includes(q),
+      );
+    }
+    return list;
+  }, [campaigns, filter, search]);
+
+  const filteredIds = useMemo(
+    () => filtered.map((c) => c.id),
+    [filtered],
+  );
+  const { aggregates } = useCampaignAggregates(showMine ? [] : filteredIds);
+
+  if (showMine) {
+    return <MyCampaignsPage />;
+  }
+
+  const activeCount = campaigns.filter((c) => c.status === 'active').length;
 
   return (
-    <div className="page">
-      <PageHeader
-        title="Semua campaign"
-        description="Pilih campaign untuk melihat detail, riwayat donasi on-chain, dan ringkasan agregat terenkripsi."
-        actions={
-          user && canCreateCampaign(user.role) ? (
-            <Link to="/campaigns/new" className="link-btn link-btn--primary">
-              + Buat campaign
-            </Link>
-          ) : null
+    <PageShell
+      title={NAV.exploreCampaigns}
+      subtitle="Buka detail campaign untuk melihat perkembangan dan mengirim donasi."
+      actions={
+        user && canCreateCampaign(user.role) ? (
+          <div className="flex flex-wrap gap-2">
+            <ButtonLink to="/campaigns?mine=1" variant="secondary">
+              {NAV.myCampaigns}
+            </ButtonLink>
+            <ButtonLink to="/campaigns/new">{NAV.createCampaign}</ButtonLink>
+          </div>
+        ) : null
+      }
+    >
+      <DataTableCard
+        toolbar={
+          <>
+            <SearchField
+              value={search}
+              onChange={setSearch}
+              placeholder="Cari judul atau deskripsi…"
+              className="w-full max-w-md"
+            />
+            <SegmentTabs
+              value={filter}
+              onChange={setFilter}
+              options={[
+                { value: 'all', label: `Semua (${campaigns.length})` },
+                { value: 'active', label: `Aktif (${activeCount})` },
+              ]}
+            />
+          </>
         }
-      />
-
-      <div className="toolbar">
-        <div className="segmented" role="tablist" aria-label="Filter status">
-          <button
-            type="button"
-            className={`segmented__btn ${filter === 'all' ? 'is-active' : ''}`}
-            onClick={() => setFilter('all')}
-          >
-            Semua ({campaigns.length})
-          </button>
-          <button
-            type="button"
-            className={`segmented__btn ${filter === 'active' ? 'is-active' : ''}`}
-            onClick={() => setFilter('active')}
-          >
-            Aktif ({campaigns.filter((c) => c.status === 'active').length})
-          </button>
-        </div>
-      </div>
-
-      {loading ? (
-        <Spinner label="Memuat daftar campaign" />
-      ) : error ? (
-        <Alert variant="error" title="Gagal memuat">
-          {error}
-        </Alert>
-      ) : filtered.length === 0 ? (
-        <div className="empty-state">
-          <h3>Tidak ada campaign</h3>
-          <p>
-            {filter === 'active'
-              ? 'Tidak ada campaign berstatus aktif saat ini.'
-              : 'Belum ada campaign terdaftar.'}
-          </p>
-        </div>
-      ) : (
-        <div className="campaign-grid">
-          {filtered.map((campaign) => (
-            <CampaignCard key={campaign.id} campaign={campaign} />
-          ))}
-        </div>
-      )}
-    </div>
+      >
+        {loading ? (
+          <div className="grid gap-4 p-6 sm:grid-cols-2 xl:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div
+                key={i}
+                className="h-64 animate-pulse rounded-lg border border-[#e4e4e7] bg-zinc-50"
+              />
+            ))}
+          </div>
+        ) : error ? (
+          <div className="border-t border-[#e4e4e7] p-5">
+            <PageAlert message={error} onRetry={() => void reload()} />
+          </div>
+        ) : filtered.length === 0 ? (
+          <EmptyState
+            inset
+            icon={Search}
+            title="Tidak ada campaign"
+            description="Ubah kata kunci pencarian atau filter status."
+          />
+        ) : (
+          <div className="grid gap-4 p-6 sm:grid-cols-2 xl:grid-cols-3">
+            {filtered.map((campaign) => (
+              <CampaignCard
+                key={campaign.id}
+                campaign={campaign}
+                aggregate={aggregates[campaign.id]}
+              />
+            ))}
+          </div>
+        )}
+      </DataTableCard>
+    </PageShell>
   );
 }

@@ -1,35 +1,74 @@
+import { Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import type { Campaign } from '../api/client';
-import { formatAmount, statusLabel } from '../lib/format';
-import { Badge, statusTone } from './ui/Badge';
+import type { AggregateSummary, Campaign } from '../api/client';
+import { campaignProgressPercent } from '../lib/campaignProgress';
+import { formatAmount } from '../lib/format';
+import { ButtonLink } from './workspace/Button';
+import { StatusBadge } from './workspace/StatusBadge';
 
-export function CampaignCard({ campaign }: { campaign: Campaign }) {
+type Props = {
+  campaign: Campaign;
+  aggregate?: AggregateSummary | null;
+};
+
+export function CampaignCard({ campaign, aggregate }: Props) {
+  const progress = campaignProgressPercent(campaign, aggregate);
+  const raised =
+    aggregate?.decrypted_total !== undefined
+      ? formatAmount(aggregate.decrypted_total)
+      : '0';
+  const donorCount = aggregate?.donation_count ?? 0;
+
   return (
-    <article className="campaign-card">
-      <div className="campaign-card__top">
-        <Badge tone={statusTone(campaign.status)}>
-          {statusLabel(campaign.status)}
-        </Badge>
+    <article className="tg-campaign-card flex flex-col">
+      <div
+        className="-mx-4 -mt-4 mb-3 h-28 rounded-t-lg bg-gradient-to-br from-slate-100 to-slate-200/80"
+        aria-hidden
+      />
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <StatusBadge status={campaign.status} />
+        <span className="text-xs font-medium tabular-nums text-zinc-500">
+          {progress}%
+        </span>
       </div>
-      <h3 className="campaign-card__title">
-        <Link to={`/campaigns/${campaign.id}`}>{campaign.title}</Link>
+      <h3 className="text-[15px] font-semibold text-zinc-900">
+        <Link
+          to={`/campaigns/${campaign.id}`}
+          className="text-inherit no-underline hover:text-trust-primary"
+        >
+          {campaign.title}
+        </Link>
       </h3>
-      <p className="campaign-card__desc">
+      <p className="mt-1.5 line-clamp-2 flex-1 text-sm text-zinc-500">
         {campaign.description || 'Tidak ada deskripsi.'}
       </p>
-      <dl className="campaign-card__meta">
-        <div>
-          <dt>Target</dt>
-          <dd>Rp {formatAmount(campaign.target_amount)}</dd>
+
+      <div className="mt-4">
+        <div className="h-2 overflow-hidden rounded-full bg-zinc-100">
+          <div
+            className="h-full rounded-full bg-trust-primary transition-all"
+            style={{ width: `${progress}%` }}
+          />
         </div>
-        <div>
-          <dt>Maks. per donasi</dt>
-          <dd>Rp {formatAmount(campaign.max_donation)}</dd>
-        </div>
-      </dl>
-      <Link to={`/campaigns/${campaign.id}`} className="campaign-card__cta">
-        Lihat detail & donasi
-      </Link>
+        <p className="mt-2 text-xs text-zinc-600">
+          <span className="font-medium text-zinc-900">Rp {raised}</span>
+          {' '}
+          dari Rp {formatAmount(campaign.target_amount)}
+        </p>
+        <p className="mt-1 flex items-center gap-1 text-xs text-zinc-500">
+          <Users className="h-3.5 w-3.5" aria-hidden />
+          {donorCount} donatur
+        </p>
+      </div>
+
+      <ButtonLink
+        to={`/campaigns/${campaign.id}`}
+        variant="secondary"
+        block
+        className="mt-4"
+      >
+        Lihat detail
+      </ButtonLink>
     </article>
   );
 }

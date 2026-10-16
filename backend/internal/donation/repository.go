@@ -235,6 +235,64 @@ func (r *Repository) FindByCampaignID(
 	return donations, nil
 }
 
+func (r *Repository) FindByDonorID(
+	ctx context.Context,
+	donorID uuid.UUID,
+) ([]Donation, error) {
+	rows, err := r.db.Query(
+		ctx,
+		`
+		SELECT
+			id,
+			campaign_id,
+			donor_id,
+			commitment,
+			encrypted_amount,
+			COALESCE(zk_proof, ''),
+			COALESCE(tx_hash, ''),
+			status,
+			created_at
+		FROM donations
+		WHERE donor_id = $1
+		ORDER BY created_at DESC
+		`,
+		donorID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	donations := make([]Donation, 0)
+
+	for rows.Next() {
+		var donation Donation
+
+		err := rows.Scan(
+			&donation.ID,
+			&donation.CampaignID,
+			&donation.DonorID,
+			&donation.Commitment,
+			&donation.EncryptedAmount,
+			&donation.ZKProof,
+			&donation.TxHash,
+			&donation.Status,
+			&donation.CreatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		donations = append(donations, donation)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return donations, nil
+}
+
 func (r *Repository) UpsertAggregate(
 	ctx context.Context,
 	campaignID uuid.UUID,

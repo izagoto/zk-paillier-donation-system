@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TrustGive — UI Prototype Board</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --navy: #0d1b3e;
+        --blue: #2563eb;
+        --blue-dark: #1e3a8a;
+        --bg: #f3f4f6;
+        --surface: #fff;
+        --muted: #5b6478;
+        --border: #e5e7eb;
+        --success: #15803d;
+        --warn: #c2410c;
+        --radius: 8px;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: Poppins, system-ui, sans-serif;
+        background: #e8ecf4;
+        color: var(--navy);
+        font-size: 11px;
+        line-height: 1.45;
+      }
+      .board-title {
+        text-align: center;
+        padding: 24px 16px 8px;
+      }
+      .board-title h1 {
+        margin: 0;
+        font-size: 22px;
+        font-weight: 700;
+      }
+      .board-title p {
+        margin: 8px auto 0;
+        max-width: 720px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .board {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+        padding: 20px 24px 40px;
+        max-width: 1400px;
+        margin: 0 auto;
+      }
+      @media (max-width: 1100px) {
+        .board {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+      @media (max-width: 720px) {
+        .board {
+          grid-template-columns: 1fr;
+        }
+      }
+      .screen-wrap {
+        position: relative;
+      }
+      .screen-num {
+        position: absolute;
+        top: -10px;
+        left: 12px;
+        background: var(--navy);
+        color: #fff;
+        font-weight: 700;
+        font-size: 11px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        z-index: 2;
+      }
+      .screen-label {
+        font-size: 10px;
+        font-weight: 600;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        margin-bottom: 6px;
+        padding-left: 4px;
+      }
+      .screen {
+        background: var(--surface);
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        overflow: hidden;
+        box-shadow: 0 12px 32px rgb(13 27 62 / 10%);
+        min-height: 320px;
+      }
+      .screen--wide {
+        grid-column: span 1;
+      }
+      /* Login */
+      .login {
+        display: flex;
+        min-height: 300px;
+      }
+      .login__brand {
+        flex: 0 0 42%;
+        background: linear-gradient(160deg, #2a5fd0, #15357a);
+        color: #fff;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+      .login__brand h2 {
+        font-size: 13px;
+        font-weight: 700;
+        margin: 12px 0 8px;
+        line-height: 1.35;
+      }
+      .login__brand ul {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        font-size: 9px;
+        opacity: 0.92;
+      }
+      .login__brand li {
+        margin-top: 4px;
+        padding-left: 10px;
+        position: relative;
+      }
+      .login__brand li::before {
+        content: "✓";
+        position: absolute;
+        left: 0;
+        font-size: 8px;
+      }
+      .login__form {
+        flex: 1;
+        padding: 20px 18px;
+      }
+      .login__form h3 {
+        margin: 0 0 4px;
+        font-size: 15px;
+      }
+      .field {
+        margin-top: 10px;
+        background: var(--bg);
+        border-radius: var(--radius);
+        padding: 8px 10px;
+        color: var(--muted);
+        font-size: 10px;
+      }
+      .btn-primary {
+        margin-top: 12px;
+        background: var(--navy);
+        color: #fff;
+        text-align: center;
+        padding: 10px;
+        border-radius: var(--radius);
+        font-weight: 600;
+        font-size: 11px;
+      }
+      .login-note {
+        margin-top: 10px;
+        font-size: 8px;
+        color: var(--muted);
+        text-align: center;
+      }
+      /* App shell */
+      .app {
+        display: flex;
+        min-height: 300px;
+      }
+      .sidebar {
+        width: 72px;
+        background: #f8fafc;
+        border-right: 1px solid var(--border);
+        padding: 10px 6px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .sidebar__logo {
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        background: linear-gradient(145deg, var(--blue), var(--blue-dark));
+        margin: 0 auto 8px;
+      }
+      .nav-item {
+        font-size: 7px;
+        text-align: center;
+        padding: 6px 2px;
+        border-radius: 6px;
+        color: var(--muted);
+      }
+      .nav-item--active {
+        background: #dbeafe;
+        color: var(--blue-dark);
+        font-weight: 600;
+      }
+      .main {
+        flex: 1;
+        padding: 10px 12px;
+        background: var(--bg);
+        overflow: hidden;
+      }
+      .topbar-mini {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+      .topbar-mini h4 {
+        margin: 0;
+        font-size: 12px;
+      }
+      .search-pill {
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 4px 10px;
+        font-size: 8px;
+        color: var(--muted);
+        width: 100px;
+      }
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
+        margin-bottom: 10px;
+      }
+      .stat-card {
+        background: #fff;
+        border-radius: var(--radius);
+        padding: 8px;
+        border: 1px solid var(--border);
+      }
+      .stat-card span {
+        display: block;
+        font-size: 7px;
+        color: var(--muted);
+      }
+      .stat-card strong {
+        font-size: 11px;
+      }
+      .cards-row {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 6px;
+      }
+      .camp-card {
+        background: #fff;
+        border-radius: var(--radius);
+        border: 1px solid var(--border);
+        overflow: hidden;
+      }
+      .camp-card__img {
+        height: 48px;
+        background: linear-gradient(135deg, #93c5fd, #3b82f6);
+      }
+      .camp-card__body {
+        padding: 6px 8px;
+      }
+      .pill {
+        display: inline-block;
+        font-size: 7px;
+        font-weight: 600;
+        padding: 2px 6px;
+        border-radius: 4px;
+        background: #dbeafe;
+        color: var(--blue-dark);
+      }
+      .camp-card h5 {
+        margin: 4px 0 2px;
+        font-size: 9px;
+      }
+      .progress {
+        height: 4px;
+        background: var(--border);
+        border-radius: 4px;
+        margin: 6px 0 4px;
+        overflow: hidden;
+      }
+      .progress > span {
+        display: block;
+        height: 100%;
+        background: var(--blue);
+        width: 72%;
+      }
+      .camp-meta {
+        font-size: 7px;
+        color: var(--muted);
+      }
+      /* Detail */
+      .hero-img {
+        height: 70px;
+        background: linear-gradient(120deg, #64748b, #94a3b8);
+        border-radius: var(--radius);
+        margin-bottom: 8px;
+      }
+      .tabs {
+        display: flex;
+        gap: 8px;
+        margin: 8px 0;
+        font-size: 8px;
+      }
+      .tab {
+        color: var(--muted);
+      }
+      .tab--on {
+        color: var(--blue);
+        font-weight: 600;
+        border-bottom: 2px solid var(--blue);
+      }
+      .btn-row {
+        display: flex;
+        gap: 6px;
+        margin-top: 10px;
+      }
+      .btn-outline {
+        flex: 1;
+        text-align: center;
+        padding: 8px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: #fff;
+        font-size: 9px;
+      }
+      .btn-primary-sm {
+        flex: 1.2;
+        text-align: center;
+        padding: 8px;
+        background: var(--navy);
+        color: #fff;
+        border-radius: var(--radius);
+        font-weight: 600;
+        font-size: 9px;
+      }
+      /* Steps */
+      .steps {
+        display: flex;
+        gap: 4px;
+        margin-bottom: 12px;
+        font-size: 8px;
+      }
+      .step {
+        flex: 1;
+        text-align: center;
+        padding: 6px 4px;
+        border-radius: 6px;
+        background: #fff;
+        border: 1px solid var(--border);
+        color: var(--muted);
+      }
+      .step--on {
+        border-color: var(--blue);
+        color: var(--blue-dark);
+        font-weight: 600;
+      }
+      .chips {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 4px;
+        margin: 8px 0;
+      }
+      .chip {
+        text-align: center;
+        padding: 6px;
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        font-size: 8px;
+      }
+      .chip--on {
+        border-color: var(--blue);
+        background: #eff6ff;
+        font-weight: 600;
+      }
+      /* Table */
+      .table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 8px;
+        background: #fff;
+        border-radius: var(--radius);
+        overflow: hidden;
+      }
+      .table th {
+        text-align: left;
+        padding: 6px;
+        background: #f8fafc;
+        color: var(--muted);
+        font-weight: 500;
+      }
+      .table td {
+        padding: 6px;
+        border-top: 1px solid var(--border);
+      }
+      .badge {
+        font-size: 7px;
+        font-weight: 600;
+        padding: 2px 6px;
+        border-radius: 4px;
+      }
+      .badge--ok {
+        background: #dcfce7;
+        color: var(--success);
+      }
+      .badge--wait {
+        background: #ffedd5;
+        color: var(--warn);
+      }
+      .tx {
+        color: var(--blue);
+        font-family: ui-monospace, monospace;
+        font-size: 7px;
+      }
+      /* Chart */
+      .chart {
+        display: flex;
+        align-items: flex-end;
+        gap: 4px;
+        height: 56px;
+        padding: 8px;
+        background: #fff;
+        border-radius: var(--radius);
+        border: 1px solid var(--border);
+        margin-bottom: 8px;
+      }
+      .bar {
+        flex: 1;
+        background: var(--blue);
+        border-radius: 3px 3px 0 0;
+        opacity: 0.85;
+      }
+      /* Form create */
+      .form-grid label {
+        display: block;
+        font-size: 8px;
+        font-weight: 600;
+        margin: 8px 0 4px;
+      }
+      .form-grid .field {
+        margin-top: 0;
+      }
+      .upload {
+        border: 2px dashed var(--border);
+        border-radius: var(--radius);
+        padding: 16px;
+        text-align: center;
+        color: var(--muted);
+        font-size: 8px;
+        margin-top: 8px;
+      }
+      .disclaimer {
+        max-width: 1400px;
+        margin: 0 auto 32px;
+        padding: 12px 24px;
+        font-size: 10px;
+        color: var(--muted);
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="board-title">
+      <h1>TrustGive — Prototype UI Board</h1>
+      <p>
+        Rancangan high-fidelity untuk penelitian (donor &amp; organizer). Data contoh —
+        tidak semua layar sudah diimplementasi di MVP. Buka file ini di browser lalu
+        screenshot untuk lampiran skripsi.
+      </p>
+    </header>
+
+    <div class="board">
+      <!-- 1 Login -->
+      <div class="screen-wrap">
+        <div class="screen-num">1</div>
+        <div class="screen-label">Login · semua role</div>
+        <div class="screen">
+          <div class="login">
+            <div class="login__brand">
+              <strong style="font-size: 9px; letter-spacing: 0.1em">TRUSTGIVE</strong>
+              <h2>Transparansi tanpa membuka setiap nominal ke publik</h2>
+              <ul>
+                <li>Pencatatan donasi pada blockchain (Hardhat demo)</li>
+                <li>Agregasi nominal terenkripsi homomorfik Paillier</li>
+                <li>Bukti zk-SNARK untuk rentang nominal yang sah</li>
+              </ul>
+            </div>
+            <div class="login__form">
+              <h3>Masuk ke akun Anda</h3>
+              <p style="margin: 0; font-size: 9px; color: var(--muted)">
+                Kelola campaign dan kirim donasi dengan bukti kriptografis.
+              </p>
+              <div class="field">Email</div>
+              <div class="field">Password · 👁</div>
+              <div class="btn-primary">Masuk</div>
+              <p class="login-note">
+                Tanpa pendaftaran di UI — akun dari pengelola penelitian (API bootstrap).
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2 Donor Dashboard -->
+      <div class="screen-wrap">
+        <div class="screen-num">2</div>
+        <div class="screen-label">Dashboard · donor (usulan)</div>
+        <div class="screen">
+          <div class="app">
+            <aside class="sidebar">
+              <div class="sidebar__logo"></div>
+              <div class="nav-item nav-item--active">Dashboard</div>
+              <div class="nav-item">Jelajahi</div>
+              <div class="nav-item">Donasi Saya</div>
+              <div class="nav-item">Profil</div>
+            </aside>
+            <div class="main">
+              <div class="topbar-mini">
+                <h4>Halo, Donatur!</h4>
+                <div class="search-pill">Cari campaign…</div>
+              </div>
+              <div class="stats">
+                <div class="stat-card"><span>Total donasi</span><strong>3</strong></div>
+                <div class="stat-card"><span>Nominal (contoh)</span><strong>Rp 450rb</strong></div>
+                <div class="stat-card"><span>Campaign didukung</span><strong>2</strong></div>
+              </div>
+              <p style="margin: 0 0 6px; font-size: 9px; font-weight: 600">Campaign populer</p>
+              <div class="cards-row">
+                <div class="camp-card">
+                  <div class="camp-card__img"></div>
+                  <div class="camp-card__body">
+                    <span class="pill">Penelitian</span>
+                    <h5>Blockchain E2E Test</h5>
+                    <div class="progress"><span style="width: 45%"></span></div>
+                    <div class="camp-meta">Rp 4,5jt / 10jt · 12 donatur</div>
+                  </div>
+                </div>
+                <div class="camp-card">
+                  <div class="camp-card__img" style="background: linear-gradient(135deg, #86efac, #22c55e)"></div>
+                  <div class="camp-card__body">
+                    <span class="pill">Demo</span>
+                    <h5>TrustGive Sidang</h5>
+                    <div class="progress"><span style="width: 30%"></span></div>
+                    <div class="camp-meta">Rp 1,5jt / 5jt · 5 donatur</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3 Detail Campaign -->
+      <div class="screen-wrap">
+        <div class="screen-num">3</div>
+        <div class="screen-label">Detail campaign · donor</div>
+        <div class="screen">
+          <div class="main" style="min-height: 300px; background: #fff">
+            <p style="margin: 0 0 6px; font-size: 8px; color: var(--blue)">← Kembali</p>
+            <div class="hero-img"></div>
+            <span class="pill">Aktif</span>
+            <h4 style="margin: 6px 0 4px; font-size: 13px">Renovasi Masjid Al-Ikhlas (contoh)</h4>
+            <div class="progress"><span style="width: 80%"></span></div>
+            <div class="camp-meta">Rp 300jt dari Rp 500jt · 120 donatur (ilustrasi)</div>
+            <div class="tabs">
+              <span class="tab tab--on">Tentang</span>
+              <span class="tab">Update</span>
+              <span class="tab">Donatur</span>
+              <span class="tab">Transparansi</span>
+            </div>
+            <p style="font-size: 8px; color: var(--muted); margin: 0">
+              Deskripsi campaign. MVP: data dari API + riwayat donasi &amp; agregat terenkripsi.
+            </p>
+            <div class="btn-row">
+              <div class="btn-outline">Bagikan</div>
+              <div class="btn-primary-sm">Donasi sekarang</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4 Form Donasi -->
+      <div class="screen-wrap">
+        <div class="screen-num">4</div>
+        <div class="screen-label">Form donasi · donor (MVP + usulan UI)</div>
+        <div class="screen">
+          <div class="main" style="background: #fff; min-height: 300px">
+            <div class="steps">
+              <div class="step step--on">1. Nominal</div>
+              <div class="step">2. Bukti ZK</div>
+              <div class="step">3. Konfirmasi</div>
+            </div>
+            <h4 style="margin: 0 0 4px; font-size: 12px">Masukkan nominal donasi</h4>
+            <p style="margin: 0; font-size: 8px; color: var(--muted)">
+              Demo: nominal ke backend (plaintext). Enkripsi Paillier + verifikasi Groth16 + tx chain.
+            </p>
+            <div class="chips">
+              <div class="chip">Rp 50rb</div>
+              <div class="chip chip--on">Rp 100rb</div>
+              <div class="chip">Rp 250rb</div>
+              <div class="chip">Rp 500rb</div>
+              <div class="chip">Custom</div>
+            </div>
+            <div class="field">100.000</div>
+            <div class="btn-primary" style="margin-top: 14px">Lanjutkan</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5 Riwayat -->
+      <div class="screen-wrap">
+        <div class="screen-num">5</div>
+        <div class="screen-label">Riwayat donasi · donor (usulan)</div>
+        <div class="screen">
+          <div class="app">
+            <aside class="sidebar">
+              <div class="sidebar__logo"></div>
+              <div class="nav-item">Dashboard</div>
+              <div class="nav-item nav-item--active">Donasi Saya</div>
+            </aside>
+            <div class="main">
+              <h4 style="margin: 0 0 8px; font-size: 11px">Riwayat donasi</h4>
+              <div style="display: flex; gap: 4px; margin-bottom: 8px">
+                <span class="chip chip--on" style="padding: 4px 8px">Semua</span>
+                <span class="chip" style="padding: 4px 8px">Confirmed</span>
+                <span class="chip" style="padding: 4px 8px">Pending</span>
+              </div>
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Campaign</th>
+                    <th>Status</th>
+                    <th>Tx</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>E2E Test</td>
+                    <td><span class="badge badge--ok">Confirmed</span></td>
+                    <td class="tx">0x8f3a…c21</td>
+                  </tr>
+                  <tr>
+                    <td>Demo Sidang</td>
+                    <td><span class="badge badge--wait">Pending</span></td>
+                    <td class="tx">—</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 6 Organizer Dashboard -->
+      <div class="screen-wrap">
+        <div class="screen-num">6</div>
+        <div class="screen-label">Dashboard · organizer (usulan)</div>
+        <div class="screen">
+          <div class="app">
+            <aside class="sidebar">
+              <div class="sidebar__logo"></div>
+              <div class="nav-item nav-item--active">Campaign</div>
+              <div class="nav-item">Buat</div>
+              <div class="nav-item">Donasi masuk</div>
+            </aside>
+            <div class="main">
+              <h4 style="margin: 0 0 8px; font-size: 11px">Ringkasan pengelola</h4>
+              <div class="stats">
+                <div class="stat-card"><span>Campaign</span><strong>3</strong></div>
+                <div class="stat-card"><span>Aktif</span><strong>3</strong></div>
+                <div class="stat-card"><span>Donasi masuk</span><strong>28</strong></div>
+              </div>
+              <p style="margin: 0 0 4px; font-size: 8px; font-weight: 600">Donasi masuk (7 hari · contoh)</p>
+              <div class="chart">
+                <div class="bar" style="height: 40%"></div>
+                <div class="bar" style="height: 65%"></div>
+                <div class="bar" style="height: 35%"></div>
+                <div class="bar" style="height: 80%"></div>
+                <div class="bar" style="height: 55%"></div>
+                <div class="bar" style="height: 70%"></div>
+                <div class="bar" style="height: 45%"></div>
+              </div>
+              <div class="camp-card">
+                <div class="camp-card__body">
+                  <h5>Blockchain E2E Test</h5>
+                  <div class="progress"><span></span></div>
+                  <div class="camp-meta">Agregat dekripsi demo backend (bukan privasi penuh)</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 7 Buat Campaign -->
+      <div class="screen-wrap">
+        <div class="screen-num">7</div>
+        <div class="screen-label">Buat campaign · organizer (MVP)</div>
+        <div class="screen">
+          <div class="main" style="background: #fff; min-height: 300px">
+            <h4 style="margin: 0 0 10px; font-size: 12px">Buat campaign baru</h4>
+            <div class="form-grid">
+              <label>Judul campaign</label>
+              <div class="field">Demo Sidang TrustGive</div>
+              <label>Deskripsi</label>
+              <div class="field" style="min-height: 40px">Campaign uji integrasi…</div>
+              <label>Target donasi (Rp)</label>
+              <div class="field">5.000.000</div>
+              <label>Batas donasi per orang (Rp) · on-chain</label>
+              <div class="field">500.000</div>
+              <div class="upload">Gambar campaign (usulan UI)<br />PNG/JPG · opsional di MVP</div>
+            </div>
+            <div class="btn-primary">Simpan campaign</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p class="disclaimer">
+      Prototipe penelitian — jangan klaim privasi end-to-end. MVP saat ini: /login, /, /campaigns,
+      /campaigns/:id, /campaigns/new · API Go + Hardhat + Paillier + Groth16.
+    </p>
+  </body>
+</html>

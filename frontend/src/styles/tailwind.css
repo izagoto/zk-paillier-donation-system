@@ -1,0 +1,276 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --color-trust-primary: #2563eb;
+  --color-trust-primary-hover: #1d4ed8;
+  --color-trust-navy: #18181b;
+  --color-trust-bg: #f4f4f5;
+  --color-trust-surface: #ffffff;
+  --color-trust-border: #e4e4e7;
+  --color-trust-muted: #64748b;
+  --color-trust-success: #16a34a;
+  --color-trust-warning: #d97706;
+  --color-trust-error: #dc2626;
+  --radius-trust-card: 12px;
+  --height-header: 4.5rem;
+  --text-header-brand: 1.0625rem;
+  --text-header-nav: 0.9375rem;
+  --text-header-meta: 0.8125rem;
+  --width-content-max: 88rem;
+  --shadow-trust-card: 0 1px 2px rgb(15 23 42 / 5%);
+}
+
+@layer base {
+  html {
+    height: 100%;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    @apply bg-trust-bg text-trust-navy antialiased;
+  }
+
+  body.workspace-active {
+    @apply h-full overflow-hidden bg-trust-bg text-trust-navy;
+  }
+
+  body.workspace-active #root {
+    @apply h-full overflow-hidden;
+  }
+
+  body.workspace-active :where(p, li, dt, dd, th, td, label, h1, h2, h3, h4) {
+    color: inherit;
+  }
+}
+
+@layer components {
+  .workspace-main {
+    @apply bg-trust-bg;
+  }
+
+  .tg-stat-card {
+    @apply flex items-center gap-4 rounded-lg border border-trust-border bg-white p-4 shadow-[var(--shadow-trust-card)];
+  }
+
+  .tg-campaign-card {
+    @apply rounded-lg border border-trust-border bg-white p-4 shadow-[var(--shadow-trust-card)];
+  }
+
+  .tg-flow-guide {
+    @apply overflow-hidden rounded-lg border border-trust-border bg-white shadow-[var(--shadow-trust-card)];
+  }
+
+  .tg-panel {
+    @apply overflow-hidden rounded-lg border border-trust-border bg-white shadow-[var(--shadow-trust-card)];
+  }
+
+  .tg-panel__header {
+    @apply border-b border-trust-border bg-white px-5 py-3.5;
+  }
+
+  .tg-panel__title {
+    @apply text-base font-semibold text-trust-navy;
+  }
+
+  .tg-panel__subtitle {
+    @apply text-sm text-trust-muted;
+  }
+
+  .tg-panel__body {
+    @apply p-5;
+  }
+
+  .tg-panel__body--flush {
+    @apply p-0;
+  }
+
+  .tg-btn {
+    @apply inline-flex h-10 items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold transition-colors disabled:pointer-events-none disabled:opacity-60;
+  }
+
+  .tg-btn--primary {
+    @apply bg-trust-primary text-white hover:bg-trust-primary-hover;
+  }
+
+  .tg-btn--secondary {
+    @apply border border-trust-border bg-trust-surface text-trust-navy hover:bg-zinc-50;
+  }
+
+  .tg-btn--ghost {
+    @apply text-trust-primary hover:bg-blue-50;
+  }
+
+  .tg-btn--block {
+    @apply w-full;
+  }
+
+  .tg-input {
+    @apply h-10 w-full rounded-lg border border-trust-border bg-trust-surface px-3 text-sm text-trust-navy outline-none ring-trust-primary/20 placeholder:text-slate-400 focus:border-trust-primary focus:ring-2;
+  }
+
+  .tg-data-table-card {
+    @apply overflow-hidden rounded-lg border border-trust-border bg-white shadow-[var(--shadow-trust-card)];
+  }
+
+  .tg-data-table__toolbar {
+    @apply flex flex-col gap-3 border-b border-[#e4e4e7] bg-[#fafafa] px-6 py-4 sm:flex-row sm:items-center sm:justify-between;
+  }
+
+  .tg-data-table__entries-bar {
+    @apply border-b border-[#e4e4e7] bg-[#fafafa] px-6 py-3;
+  }
+
+  .tg-data-table__entries-label {
+    @apply flex items-center gap-2 text-sm text-[#52525b];
+  }
+
+  .tg-data-table {
+    @apply rounded-lg border border-trust-border bg-white shadow-[var(--shadow-trust-card)];
+  }
+
+  .tg-data-table:not(.tg-data-table--embedded) {
+    @apply overflow-hidden;
+  }
+
+  .tg-data-table--embedded {
+    @apply rounded-none border-0 bg-transparent shadow-none;
+  }
+
+  .tg-data-table__scroll {
+    @apply overflow-x-auto;
+  }
+
+  /* ~5 baris data + header sticky (py-4 ≈ 52px per baris) */
+  .tg-data-table__scroll--body-scroll {
+    max-height: 21.5rem;
+    overflow-y: auto;
+    scrollbar-width: thin;
+  }
+
+  .tg-data-table__scroll--body-scroll::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .tg-data-table__scroll--body-scroll::-webkit-scrollbar-thumb {
+    @apply rounded-full bg-zinc-300;
+  }
+
+  .tg-data-table__table {
+    @apply w-full text-left;
+  }
+
+  .tg-data-table__head {
+    @apply sticky top-0 z-10 outline outline-[#e4e4e7];
+  }
+
+  .tg-data-table__head tr {
+    @apply bg-[#f4f4f5];
+  }
+
+  .tg-data-table__head th {
+    @apply whitespace-nowrap px-6 py-4 text-left text-sm font-semibold text-[#475569];
+  }
+
+  .tg-data-table__body {
+    @apply divide-y divide-[#e4e4e7]/60;
+  }
+
+  .tg-data-table__row {
+    @apply border-b border-[#e4e4e7] bg-white transition-colors hover:bg-[#f9fafb];
+  }
+
+  .tg-data-table__row td {
+    @apply px-6 py-4 text-sm text-[#4b5563];
+  }
+
+  .tg-data-table__empty {
+    @apply px-6 py-16 text-center text-xs font-mono text-[#71717a];
+  }
+
+  .tg-data-table__footer {
+    @apply flex flex-col gap-4 border-t border-[#e4e4e7] bg-[#fafafa] px-6 py-4 sm:flex-row sm:items-center sm:justify-between;
+  }
+
+  .tg-data-table__range {
+    @apply text-xs font-mono text-[#71717a];
+  }
+
+  .tg-data-table__pager {
+    @apply flex items-center gap-1.5 self-end sm:self-auto;
+  }
+
+  .tg-data-table__page-btn {
+    @apply flex cursor-pointer items-center justify-center rounded-lg border border-[#e4e4e7] bg-white p-1.5 text-[#52525b] transition-all hover:bg-[#f4f4f5] disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .tg-data-table__page-num {
+    @apply cursor-pointer rounded-lg border border-[#e4e4e7] bg-white px-3 py-1 text-xs font-mono font-bold text-[#52525b] transition-all hover:bg-[#f4f4f5];
+  }
+
+  .tg-data-table__page-num.is-active {
+    @apply border-trust-primary bg-trust-primary text-white shadow-sm hover:bg-trust-primary-hover;
+  }
+
+  .tg-table-action {
+    @apply text-sm font-semibold text-trust-primary hover:text-trust-primary-hover hover:underline;
+  }
+
+  .tg-segment {
+    @apply inline-flex max-w-full flex-wrap rounded-lg border border-trust-border bg-trust-surface p-0.5;
+  }
+
+  .tg-segment__btn {
+    @apply rounded-md px-3.5 py-2 text-xs font-semibold text-trust-muted transition-all hover:text-trust-navy;
+  }
+
+  .tg-segment__btn--active {
+    @apply bg-trust-primary text-white;
+  }
+
+  .tg-wizard {
+    @apply mb-4 flex flex-wrap gap-2;
+  }
+
+  .tg-wizard__step {
+    @apply flex items-center gap-2 rounded-full border border-trust-border bg-slate-50 px-3 py-1 text-xs font-semibold text-trust-muted;
+  }
+
+  .tg-wizard__step--active {
+    @apply border-blue-200 bg-blue-50 text-trust-primary;
+  }
+
+  .tg-wizard__step--done {
+    @apply border-emerald-200 bg-emerald-50 text-emerald-700;
+  }
+
+  .tg-chips {
+    @apply mb-2 flex flex-wrap gap-2;
+  }
+
+  .tg-chip {
+    @apply rounded-lg border border-trust-border bg-trust-surface px-3 py-1.5 text-xs font-semibold text-trust-navy hover:border-blue-200 hover:bg-blue-50;
+  }
+
+  .tg-chip--selected {
+    @apply border-trust-primary bg-blue-50 text-trust-primary;
+  }
+
+  .tg-confirm {
+    @apply rounded-xl border border-trust-border bg-slate-50 p-4 text-center;
+  }
+
+  .tg-confirm__value {
+    @apply mt-1 text-2xl font-bold text-trust-navy;
+  }
+
+  .tg-shell-width {
+    @apply mx-auto w-full max-w-[var(--width-content-max)] px-4 sm:px-6 lg:px-8;
+  }
+
+  .tg-page-stack {
+    @apply flex flex-col gap-5;
+  }
+}
