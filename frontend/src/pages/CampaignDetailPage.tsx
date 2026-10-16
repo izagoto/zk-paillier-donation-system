@@ -15,6 +15,7 @@ import { Button, ButtonLink } from '../components/workspace/Button';
 import { PageAlert } from '../components/workspace/PageAlert';
 import { DataTable } from '../components/workspace/DataTable';
 import { PageShell } from '../components/workspace/PageShell';
+import { Panel } from '../components/workspace/Panel';
 import { SegmentTabs } from '../components/workspace/SegmentTabs';
 import { StatusBadge } from '../components/workspace/StatusBadge';
 import { useAuth } from '../context/AuthContext';
@@ -113,12 +114,19 @@ export function CampaignDetailPage() {
   const progressPct = campaignProgressPercent(campaign, aggregate);
   const donorCount = aggregate?.donation_count ?? 0;
 
-  const backTo = isOrganizerView ? '/campaigns?mine=1' : '/campaigns';
-  const backLabel = isOrganizerView ? NAV.myCampaigns : NAV.exploreCampaigns;
+  const metaSubtitle = [
+    campaign.category,
+    campaign.location,
+    `${donorCount} donatur`,
+  ]
+    .filter(Boolean)
+    .join(' · ');
 
   return (
     <PageShell
+      contentLayout="pane"
       title={campaign.title}
+      subtitle={metaSubtitle || undefined}
       breadcrumb={{ entityTitle: campaign.title }}
       actions={
         <div className="flex flex-wrap items-center gap-2">
@@ -142,24 +150,16 @@ export function CampaignDetailPage() {
     >
       {error ? <PageAlert message={error} onRetry={() => void load()} /> : null}
       {shareHint ? (
-        <p className="mb-2 text-sm text-emerald-700">{shareHint}</p>
+        <p className="shrink-0 text-sm text-emerald-700">{shareHint}</p>
       ) : null}
 
-      <ButtonLink
-        to={backTo}
-        variant="ghost"
-        className="-mt-2 mb-4 h-9 px-0 text-sm text-zinc-600 hover:bg-transparent"
-      >
-        ← Kembali ke {backLabel}
-      </ButtonLink>
-
-      <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
-        <div className="min-w-0 space-y-5">
+      <div className="flex min-h-0 w-full flex-1 flex-col gap-5">
+        <div className="grid shrink-0 gap-5 lg:grid-cols-[minmax(0,1fr)_17.5rem] lg:items-start">
           <section className="overflow-hidden rounded-lg border border-trust-border bg-white shadow-[var(--shadow-trust-card)]">
             <CampaignCover
               imageUrl={campaign.image_url}
               title={campaign.title}
-              className="h-40 w-full sm:h-48"
+              className="h-36 w-full sm:h-40"
             />
             <div className="p-5 sm:p-6">
               <div className="flex flex-wrap items-center gap-2">
@@ -173,11 +173,7 @@ export function CampaignDetailPage() {
                 </span>
               </div>
 
-              <p className="mt-4 text-sm leading-relaxed text-zinc-600">
-                {campaign.description || 'Tidak ada deskripsi.'}
-              </p>
-
-              <div className="mt-6">
+              <div className="mt-5">
                 <div className="flex items-end justify-between gap-4">
                   <div>
                     <p className="text-2xl font-semibold tracking-tight text-zinc-900">
@@ -201,22 +197,82 @@ export function CampaignDetailPage() {
             </div>
           </section>
 
-          <SegmentTabs
-            ariaLabel="Bagian campaign"
-            value={tab}
-            onChange={setTab}
-            options={[
-              { value: 'about', label: 'Tentang' },
-              { value: 'donations', label: 'Donasi masuk' },
-              { value: 'transparency', label: 'Transparansi' },
-            ]}
-          />
+          <aside className="flex flex-col gap-4">
+            {canShowDonate ? (
+              <Panel title="Dukung campaign ini">
+                <p className="text-xs text-zinc-500">
+                  Hingga Rp {formatAmount(campaign.max_donation)} per donasi
+                </p>
+                <ButtonLink
+                  to={`/campaigns/${id}/donate`}
+                  block
+                  className="mt-4"
+                >
+                  Donasi sekarang
+                </ButtonLink>
+              </Panel>
+            ) : null}
 
+            {isOrganizerView ? (
+              <Panel title="Tampilan pengelola">
+                <p className="text-sm text-zinc-600">
+                  Pantau donasi masuk dari menu utama atau bagikan tautan campaign ke
+                  calon donatur.
+                </p>
+                <ButtonLink
+                  to="/organizer/donations"
+                  variant="secondary"
+                  block
+                  className="mt-4"
+                >
+                  {NAV.incomingDonations}
+                </ButtonLink>
+              </Panel>
+            ) : null}
+
+            {!canShowDonate && !isOrganizerView ? (
+              <Panel title="Ingin berdonasi?">
+                {!user ? (
+                  <p className="text-sm text-zinc-600">
+                    <Link to="/login" className="font-semibold text-trust-primary">
+                      Masuk
+                    </Link>{' '}
+                    untuk mengirim donasi.
+                  </p>
+                ) : campaign.status !== 'active' ? (
+                  <p className="text-sm text-zinc-600">
+                    Campaign ini tidak menerima donasi baru saat ini.
+                  </p>
+                ) : (
+                  <p className="text-sm text-zinc-600">
+                    Gunakan akun donatur untuk mengirim donasi.
+                  </p>
+                )}
+              </Panel>
+            ) : null}
+          </aside>
+        </div>
+
+        <section className="tg-panel flex min-h-0 flex-1 flex-col overflow-hidden">
+          <div className="shrink-0 border-b border-trust-border bg-[#fafafa] px-4 py-3 sm:px-5">
+            <SegmentTabs
+              ariaLabel="Bagian campaign"
+              value={tab}
+              onChange={setTab}
+              options={[
+                { value: 'about', label: 'Tentang' },
+                { value: 'donations', label: 'Donasi masuk' },
+                { value: 'transparency', label: 'Transparansi' },
+              ]}
+            />
+          </div>
+
+          <div className="tg-scroll-y min-h-0 flex-1 basis-0">
           {tab === 'about' ? (
-            <section className="rounded-lg border border-trust-border bg-white p-5 shadow-[var(--shadow-trust-card)] sm:p-6">
+            <div className="p-5 sm:p-6">
               <h2 className="text-sm font-semibold text-zinc-900">Tentang campaign</h2>
               <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-zinc-600">
-                {campaign.description || 'Belum ada deskripsi tambahan.'}
+                {campaign.description || 'Belum ada deskripsi.'}
               </p>
               <dl className="mt-6 grid gap-4 border-t border-zinc-100 pt-6 text-sm sm:grid-cols-2">
                 {campaign.category ? (
@@ -251,65 +307,62 @@ export function CampaignDetailPage() {
                   </dd>
                 </div>
               </dl>
-            </section>
+            </div>
           ) : null}
 
           {tab === 'donations' ? (
-            <section className="tg-panel overflow-hidden">
-              {donations.length === 0 ? (
-                <p className="px-5 py-10 text-center text-sm text-zinc-500">
-                  Belum ada donasi untuk campaign ini.
-                </p>
-              ) : (
-                <DataTable
-                  variant="embedded"
-                  data={donations}
-                  rowKey={(d) => d.id}
-                  minWidth="640px"
-                  columns={[
-                    {
-                      id: 'status',
-                      header: 'Status',
-                      render: (donation) => (
-                        <StatusBadge status={donation.status} />
-                      ),
-                    },
-                    {
-                      id: 'time',
-                      header: 'Waktu',
-                      cellClassName: 'whitespace-nowrap',
-                      render: (donation) =>
-                        formatDateTime(donation.created_at),
-                    },
-                    {
-                      id: 'tx',
-                      header: 'Transaksi',
-                      cellClassName: 'font-mono text-xs text-zinc-600',
-                      render: (donation) =>
-                        donation.tx_hash
-                          ? truncateMiddle(donation.tx_hash, 10, 8)
-                          : '—',
-                    },
-                    {
-                      id: 'verify',
-                      header: 'Verifikasi',
-                      render: (donation) => (
-                        <Link
-                          to={`/verify/donation/${donation.id}`}
-                          className="text-xs font-semibold text-trust-primary hover:underline"
-                        >
-                          Lihat bukti
-                        </Link>
-                      ),
-                    },
-                  ]}
-                />
-              )}
-            </section>
+            donations.length === 0 ? (
+              <p className="px-5 py-10 text-center text-sm text-zinc-500">
+                Belum ada donasi untuk campaign ini.
+              </p>
+            ) : (
+              <DataTable
+                variant="embedded"
+                data={donations}
+                rowKey={(d) => d.id}
+                minWidth="640px"
+                columns={[
+                  {
+                    id: 'status',
+                    header: 'Status',
+                    render: (donation) => (
+                      <StatusBadge status={donation.status} />
+                    ),
+                  },
+                  {
+                    id: 'time',
+                    header: 'Waktu',
+                    cellClassName: 'whitespace-nowrap',
+                    render: (donation) => formatDateTime(donation.created_at),
+                  },
+                  {
+                    id: 'tx',
+                    header: 'Transaksi',
+                    cellClassName: 'font-mono text-xs text-zinc-600',
+                    render: (donation) =>
+                      donation.tx_hash
+                        ? truncateMiddle(donation.tx_hash, 10, 8)
+                        : '—',
+                  },
+                  {
+                    id: 'verify',
+                    header: 'Verifikasi',
+                    render: (donation) => (
+                      <Link
+                        to={`/verify/donation/${donation.id}`}
+                        className="text-xs font-semibold text-trust-primary hover:underline"
+                      >
+                        Lihat bukti
+                      </Link>
+                    ),
+                  },
+                ]}
+              />
+            )
           ) : null}
 
           {tab === 'transparency' ? (
-            <section className="rounded-lg border border-trust-border bg-white p-5 shadow-[var(--shadow-trust-card)] sm:p-6">
+            <div className="p-5 sm:p-6">
               <h2 className="text-sm font-semibold text-zinc-900">Transparansi</h2>
               <p className="mt-2 text-sm text-zinc-600">
                 Setiap donasi memiliki referensi bukti dan transaksi yang dapat
@@ -318,107 +371,51 @@ export function CampaignDetailPage() {
               {donations.length === 0 ? (
                 <p className="mt-6 text-sm text-zinc-500">Belum ada data donasi.</p>
               ) : (
-                <div className="mt-4">
-                <DataTable
-                  data={donations}
-                  rowKey={(d) => d.id}
-                  minWidth="640px"
-                  columns={[
-                    {
-                      id: 'status',
-                      header: 'Status',
-                      render: (d) => <StatusBadge status={d.status} />,
-                    },
-                    {
-                      id: 'commitment',
-                      header: 'Bukti',
-                      cellClassName: 'font-mono text-xs',
-                      render: (d) => truncateMiddle(d.commitment, 12, 10),
-                    },
-                    {
-                      id: 'tx',
-                      header: 'Transaksi',
-                      cellClassName: 'font-mono text-xs',
-                      render: (d) =>
-                        d.tx_hash ? truncateMiddle(d.tx_hash, 12, 10) : '—',
-                    },
-                    {
-                      id: 'verify',
-                      header: 'Verifikasi',
-                      render: (d) => (
-                        <Link
-                          to={`/verify/donation/${d.id}`}
-                          className="text-xs font-semibold text-trust-primary hover:underline"
-                        >
-                          Publik
-                        </Link>
-                      ),
-                    },
-                  ]}
-                />
+                <div className="mt-4 -mx-5 sm:-mx-6">
+                  <DataTable
+                    variant="embedded"
+                    data={donations}
+                    rowKey={(d) => d.id}
+                    minWidth="640px"
+                    columns={[
+                      {
+                        id: 'status',
+                        header: 'Status',
+                        render: (d) => <StatusBadge status={d.status} />,
+                      },
+                      {
+                        id: 'commitment',
+                        header: 'Bukti',
+                        cellClassName: 'font-mono text-xs',
+                        render: (d) => truncateMiddle(d.commitment, 12, 10),
+                      },
+                      {
+                        id: 'tx',
+                        header: 'Transaksi',
+                        cellClassName: 'font-mono text-xs',
+                        render: (d) =>
+                          d.tx_hash ? truncateMiddle(d.tx_hash, 12, 10) : '—',
+                      },
+                      {
+                        id: 'verify',
+                        header: 'Verifikasi',
+                        render: (d) => (
+                          <Link
+                            to={`/verify/donation/${d.id}`}
+                            className="text-xs font-semibold text-trust-primary hover:underline"
+                          >
+                            Publik
+                          </Link>
+                        ),
+                      },
+                    ]}
+                  />
                 </div>
               )}
-            </section>
-          ) : null}
-        </div>
-
-        <aside className="space-y-4 lg:sticky lg:top-[calc(var(--height-header)+1rem)] lg:self-start">
-          {canShowDonate ? (
-            <div className="rounded-lg border border-trust-border bg-white p-5 shadow-[var(--shadow-trust-card)]">
-              <p className="text-sm font-semibold text-zinc-900">Dukung campaign ini</p>
-              <p className="mt-1 text-xs text-zinc-500">
-                Hingga Rp {formatAmount(campaign.max_donation)} per donasi
-              </p>
-              <ButtonLink
-                to={`/campaigns/${id}/donate`}
-                block
-                className="mt-4"
-              >
-                Donasi sekarang
-              </ButtonLink>
             </div>
           ) : null}
-
-          {isOrganizerView ? (
-            <div className="rounded-lg border border-trust-border bg-white p-5 shadow-[var(--shadow-trust-card)]">
-              <p className="text-sm font-semibold text-zinc-900">Tampilan pengelola</p>
-              <p className="mt-2 text-sm text-zinc-600">
-                Pantau donasi masuk dari menu utama atau bagikan tautan campaign ini
-                ke calon donatur.
-              </p>
-              <ButtonLink
-                to="/organizer/donations"
-                variant="secondary"
-                block
-                className="mt-4"
-              >
-                {NAV.incomingDonations}
-              </ButtonLink>
-            </div>
-          ) : null}
-
-          {!canShowDonate && !isOrganizerView ? (
-            <div className="rounded-lg border border-trust-border bg-white p-5 shadow-[var(--shadow-trust-card)]">
-              <p className="text-sm font-semibold text-zinc-900">Ingin berdonasi?</p>
-              {!user ? (
-                <p className="mt-2 text-sm text-zinc-600">
-                  <Link to="/login" className="font-semibold text-trust-primary">
-                    Masuk
-                  </Link>{' '}
-                  untuk mengirim donasi.
-                </p>
-              ) : campaign.status !== 'active' ? (
-                <p className="mt-2 text-sm text-zinc-600">
-                  Campaign ini tidak menerima donasi baru saat ini.
-                </p>
-              ) : (
-                <p className="mt-2 text-sm text-zinc-600">
-                  Gunakan akun donatur untuk mengirim donasi.
-                </p>
-              )}
-            </div>
-          ) : null}
-        </aside>
+          </div>
+        </section>
       </div>
 
       {isOwner ? (

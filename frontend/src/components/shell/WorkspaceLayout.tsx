@@ -10,14 +10,16 @@ export function WorkspaceLayout() {
 
   return (
     <div
-      className="flex h-full min-h-0 flex-col overflow-hidden bg-trust-bg text-trust-navy"
+      className="flex min-h-0 flex-1 flex-col overflow-hidden bg-trust-bg text-trust-navy"
       style={{ background: '#F4F4F5', color: '#18181B' }}
     >
       <AppHeader />
       <main
-        className="workspace-content workspace-main min-h-0 flex-1 overflow-y-auto overscroll-y-contain pb-4 pt-[calc(var(--height-header)+1rem)] sm:pb-5 sm:pt-[calc(var(--height-header)+1.25rem)]"
+        className="workspace-content workspace-main flex min-h-0 flex-1 basis-0 flex-col overflow-hidden pb-4 pt-[calc(var(--height-header)+1rem)] sm:pb-5 sm:pt-[calc(var(--height-header)+1.25rem)]"
       >
-        <Outlet />
+        <div className="flex min-h-0 flex-1 basis-0 flex-col overflow-hidden">
+          <Outlet />
+        </div>
       </main>
     </div>
   );

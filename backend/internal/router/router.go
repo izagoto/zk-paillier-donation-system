@@ -143,7 +143,35 @@ func Setup(
 					"/generate-proof",
 					donationHandler.GenerateProof,
 				)
+				protectedDonationRoutes.POST(
+					"/:id/retry",
+					donationHandler.RetryFailed,
+				)
 			}
+		}
+
+		adminRoutes := api.Group("/admin")
+		adminRoutes.Use(
+			auth.AuthMiddleware(jwtManager),
+			auth.RequireRole(auth.RoleAdmin),
+		)
+		{
+			adminRoutes.GET(
+				"/reconciliation/overview",
+				donationHandler.AdminReconciliationOverview,
+			)
+			adminRoutes.GET(
+				"/donations/archive",
+				donationHandler.AdminListArchive,
+			)
+			adminRoutes.POST(
+				"/campaigns/:id/reconcile-aggregate",
+				donationHandler.AdminReconcileCampaignAggregate,
+			)
+			adminRoutes.POST(
+				"/donations/reconcile-pending",
+				donationHandler.AdminReconcilePending,
+			)
 		}
 	}
 

@@ -167,6 +167,6 @@ Detail: [11-LOCAL-SETUP.md](11-LOCAL-SETUP.md).
 ## Catatan keamanan demo
 
 - Set `BOOTSTRAP_TOKEN` kuat jika API bisa diakses dari luar localhost.
-- Role **`auditor`** belum punya dashboard khusus; hak baca mengikuti endpoint publik.
+- Role **`auditor`**: dashboard `/auditor` (campaign aktif + panduan verifikasi); hak baca mengikuti endpoint publik.
 
 Lihat [08-KEAMANAN.md](08-KEAMANAN.md).

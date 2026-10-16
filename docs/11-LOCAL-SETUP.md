@@ -41,6 +41,26 @@ migrate -path migrations -database "$DATABASE_URL" up
 
 Setelah pull terbaru, pastikan migrasi sampai **000007** (metadata campaign: gambar, kategori, lokasi).
 
+### Data demo sidang (opsional)
+
+Setelah ada campaign dari akun `pengelola@demo.local`:
+
+```bash
+# dari root repo (cleanup campaign uji + seed metadata)
+./backend/scripts/setup_demo_presentation.sh
+```
+
+Atau manual dari folder `backend`:
+
+```bash
+psql "$DATABASE_URL" -f scripts/cleanup_demo_campaigns.sql
+psql "$DATABASE_URL" -f scripts/seed_demo_presentation.sql
+```
+
+Akun **admin** (rekonsiliasi UI): `POST /api/auth/register` dengan `BOOTSTRAP_TOKEN` dan `"role":"admin"` — lihat [10-AKSES-LOGIN.md](10-AKSES-LOGIN.md).
+
+Reliability (idempotency, retry, admin rekonsiliasi): [13-RELIABILITY.md](13-RELIABILITY.md).
+
 Cek koneksi:
 
 ```bash

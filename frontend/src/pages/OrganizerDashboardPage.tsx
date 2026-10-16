@@ -27,8 +27,8 @@ export function OrganizerDashboardPage() {
 
   const activeMine = mine.filter((c) => c.status === 'active').length;
 
-  const previewIds = useMemo(() => mine.slice(0, 4).map((c) => c.id), [mine]);
-  const { aggregates } = useCampaignAggregates(previewIds);
+  const mineIds = useMemo(() => mine.map((c) => c.id), [mine]);
+  const { aggregates } = useCampaignAggregates(mineIds);
   const [stats, setStats] = useState<DayDonationStat[]>([]);
 
   useEffect(() => {
@@ -46,6 +46,7 @@ export function OrganizerDashboardPage() {
 
   return (
     <PageShell
+      contentLayout="pane"
       title={greeting}
       subtitle="Kelola campaign dan pantau donasi yang masuk."
       actions={
@@ -55,29 +56,35 @@ export function OrganizerDashboardPage() {
         </ButtonLink>
       }
     >
-      {error ? <PageAlert message={error} onRetry={() => void reload()} /> : null}
+      <div className="flex min-h-0 flex-1 flex-col gap-5">
+        <div className="flex shrink-0 flex-col gap-5">
+          {error ? <PageAlert message={error} onRetry={() => void reload()} /> : null}
 
-      <div className="flex flex-col gap-5">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <SummaryCard
-            label="Total campaign"
-            value={loading ? '—' : String(mine.length)}
-            icon={FolderKanban}
-            accent="blue"
-          />
-          <SummaryCard
-            label="Campaign aktif"
-            value={loading ? '—' : String(activeMine)}
-            icon={CheckCircle2}
-            accent="emerald"
-          />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <SummaryCard
+              label="Total campaign"
+              value={loading ? '—' : String(mine.length)}
+              icon={FolderKanban}
+              accent="blue"
+            />
+            <SummaryCard
+              label="Campaign aktif"
+              value={loading ? '—' : String(activeMine)}
+              icon={CheckCircle2}
+              accent="emerald"
+            />
+          </div>
+
+          <Panel
+            title="Donasi 7 hari terakhir"
+            subtitle="Donasi terkonfirmasi ke campaign Anda"
+          >
+            <OrganizerDonationChart data={stats} days={7} />
+          </Panel>
         </div>
 
-        <Panel title="Donasi 7 hari terakhir" subtitle="Donasi terkonfirmasi ke campaign Anda">
-          <OrganizerDonationChart data={stats} days={7} />
-        </Panel>
-
         <Panel
+          scrollBody="fill"
           title="Campaign terbaru"
           actions={
             mine.length > 0 ? (
@@ -101,8 +108,8 @@ export function OrganizerDashboardPage() {
               </ButtonLink>
             </div>
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2">
-              {mine.slice(0, 4).map((campaign) => (
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {mine.map((campaign) => (
                 <CampaignCard
                   key={campaign.id}
                   campaign={campaign}

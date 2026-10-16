@@ -96,6 +96,7 @@ export function MyCampaignsPage() {
 
   return (
     <PageShell
+      contentLayout="pane"
       title={NAV.myCampaigns}
       subtitle="Daftar campaign yang Anda kelola. Buka detail untuk melihat donasi masuk."
       actions={
@@ -110,7 +111,7 @@ export function MyCampaignsPage() {
         </div>
       }
     >
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid shrink-0 gap-4 sm:grid-cols-3">
         <SummaryCard
           label="Total campaign"
           value={loading ? '—' : String(mine.length)}
@@ -137,6 +138,7 @@ export function MyCampaignsPage() {
       </div>
 
       <DataTableCard
+        scrollBody="auto"
         toolbar={
           <>
             <SearchField

@@ -361,6 +361,42 @@ func (r *Repository) UpdateStatus(
 	return err
 }
 
+func (r *Repository) TransitionStatus(
+	ctx context.Context,
+	donationID uuid.UUID,
+	fromStatus string,
+	toStatus string,
+) error {
+	if err := ValidateStatusTransition(fromStatus, toStatus); err != nil {
+		return err
+	}
+
+	if fromStatus == toStatus {
+		return nil
+	}
+
+	tag, err := r.db.Exec(
+		ctx,
+		`
+		UPDATE donations
+		SET status = $3
+		WHERE id = $1 AND status = $2
+		`,
+		donationID,
+		fromStatus,
+		toStatus,
+	)
+	if err != nil {
+		return err
+	}
+
+	if tag.RowsAffected() == 0 {
+		return ErrInvalidDonationStatus
+	}
+
+	return nil
+}
+
 func (r *Repository) UpdateTxHash(
 	ctx context.Context,
 	donationID uuid.UUID,
@@ -647,6 +683,187 @@ func (r *Repository) CountConfirmedByDayForOrganizer(
 			return nil, err
 		}
 		result = append(result, item)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+type DonationStatusCounts struct {
+	Pending   int
+	Confirmed int
+	Failed    int
+}
+
+func (r *Repository) CountDonationsByStatus(
+	ctx context.Context,
+) (*DonationStatusCounts, error) {
+	rows, err := r.db.Query(
+		ctx,
+		`
+		SELECT status, COUNT(*)::int
+		FROM donations
+		GROUP BY status
+		`,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	counts := &DonationStatusCounts{}
+
+	for rows.Next() {
+		var status string
+		var count int
+		if err := rows.Scan(&status, &count); err != nil {
+			return nil, err
+		}
+		switch status {
+		case "pending":
+			counts.Pending = count
+		case "confirmed":
+			counts.Confirmed = count
+		case "failed":
+			counts.Failed = count
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return counts, nil
+}
+
+func (r *Repository) FindPending(
+	ctx context.Context,
+	limit int,
+) ([]Donation, error) {
+	if limit <= 0 || limit > 100 {
+		limit = 50
+	}
+
+	rows, err := r.db.Query(
+		ctx,
+		`
+		SELECT
+			id,
+			campaign_id,
+			donor_id,
+			commitment,
+			encrypted_amount,
+			COALESCE(zk_proof, ''),
+			COALESCE(tx_hash, ''),
+			status,
+			created_at
+		FROM donations
+		WHERE status = 'pending'
+		ORDER BY created_at ASC
+		LIMIT $1
+		`,
+		limit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	result := make([]Donation, 0)
+
+	for rows.Next() {
+		var donation Donation
+		if err := rows.Scan(
+			&donation.ID,
+			&donation.CampaignID,
+			&donation.DonorID,
+			&donation.Commitment,
+			&donation.EncryptedAmount,
+			&donation.ZKProof,
+			&donation.TxHash,
+			&donation.Status,
+			&donation.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		result = append(result, donation)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+func (r *Repository) CountArchiveRows(ctx context.Context) (int, error) {
+	var count int
+	err := r.db.QueryRow(
+		ctx,
+		`SELECT COUNT(*)::int FROM donations_duplicate_archive`,
+	).Scan(&count)
+	return count, err
+}
+
+type ArchiveRow struct {
+	ID            uuid.UUID `json:"id"`
+	CampaignID    uuid.UUID `json:"campaign_id"`
+	DonorID       uuid.UUID `json:"donor_id"`
+	Commitment    string    `json:"commitment"`
+	Status        string    `json:"status"`
+	ArchiveReason string    `json:"archive_reason"`
+	ArchivedAt    time.Time `json:"archived_at"`
+}
+
+func (r *Repository) ListArchiveRows(
+	ctx context.Context,
+	limit int,
+) ([]ArchiveRow, error) {
+	if limit <= 0 || limit > 200 {
+		limit = 50
+	}
+
+	rows, err := r.db.Query(
+		ctx,
+		`
+		SELECT
+			id,
+			campaign_id,
+			donor_id,
+			commitment,
+			status,
+			archive_reason,
+			archived_at
+		FROM donations_duplicate_archive
+		ORDER BY archived_at DESC
+		LIMIT $1
+		`,
+		limit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	result := make([]ArchiveRow, 0)
+
+	for rows.Next() {
+		var row ArchiveRow
+		if err := rows.Scan(
+			&row.ID,
+			&row.CampaignID,
+			&row.DonorID,
+			&row.Commitment,
+			&row.Status,
+			&row.ArchiveReason,
+			&row.ArchivedAt,
+		); err != nil {
+			return nil, err
+		}
+		result = append(result, row)
 	}
 
 	if err := rows.Err(); err != nil {

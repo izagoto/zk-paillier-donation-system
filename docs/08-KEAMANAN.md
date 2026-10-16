@@ -20,15 +20,15 @@
 
 **Tidak ada privasi terhadap backend:** amount dikirim dalam plaintext. Untuk mencapai tujuan lebih kuat, perlu mengevaluasi client-side encryption, proof generation, dan distribusi kepercayaan/kunci.
 
-**Replay/idempotency:** duplicate logical donation historis sudah ditemukan. Unique constraint dan penanganan concurrent retry belum diterapkan secara lengkap.
+**Replay/idempotency:** migration `000006` + unique `idempotency_key`; replay mengembalikan HTTP 200; race insert ditangani dengan lookup ulang. Duplikat historis diarsipkan di `donations_duplicate_archive`.
 
-**Distributed consistency:** keberhasilan chain tidak menjamin update database/aggregate berhasil. Diperlukan recovery dan reconciliation.
+**Distributed consistency:** keberhasilan chain tidak selalu sinkron dengan DB. Tersedia retry donasi `failed`, admin `reconcile-pending`, dan hitung ulang agregat — bukan worker otomatis 24/7.
 
 **Kunci dan data sensitif:** private key Paillier, signer EVM, JWT secret, dan data user memerlukan penyimpanan serta akses terkontrol.
 
 ## 4. Kebijakan data historis
 
-Tabel `donations_duplicate_archive` telah dibuat pada migration 000005. Tidak boleh memindahkan record atau mengubah aggregate sebelum tersedia kebijakan canonical record yang dapat diaudit. Transaksi lama dari Hardhat yang sudah di-reset tidak dapat dianggap terverifikasi hanya berdasarkan tx hash.
+Tabel `donations_duplicate_archive` (migration 000005) hanya untuk audit; kebijakan canonical ada di [13-RELIABILITY.md](13-RELIABILITY.md). Transaksi lama dari Hardhat yang sudah di-reset tidak dapat dianggap terverifikasi hanya berdasarkan tx hash.
 
 ## 5. Pengujian keamanan yang direncanakan
 

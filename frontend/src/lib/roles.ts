@@ -21,3 +21,7 @@ export function canDonate(role: string): boolean {
 export function canAudit(role: string): boolean {
   return role === 'auditor' || role === 'admin';
 }
+
+export function canManageAdmin(role: string): boolean {
+  return role === 'admin';
+}

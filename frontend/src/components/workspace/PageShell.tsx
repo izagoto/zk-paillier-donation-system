@@ -14,6 +14,11 @@ type Props = {
   children: ReactNode;
   /** Crumb terakhir (mis. judul campaign); breadcrumb parent tetap otomatis. */
   breadcrumb?: BreadcrumbOptions;
+  /**
+   * `page-scroll` (default): area konten halaman yang scroll.
+   * `pane`: judul tetap; anak mengisi sisa tinggi (mis. kartu dengan toolbar tetap).
+   */
+  contentLayout?: 'page-scroll' | 'pane';
 };
 
 export function PageShell({
@@ -22,6 +27,7 @@ export function PageShell({
   actions,
   children,
   breadcrumb,
+  contentLayout = 'page-scroll',
 }: Props) {
   const { pathname, search } = useLocation();
   const { user } = useAuth();
@@ -31,9 +37,9 @@ export function PageShell({
     : null;
 
   return (
-    <div className="tg-shell-width">
+    <div className="tg-shell-width flex min-h-0 flex-1 basis-0 flex-col overflow-hidden py-4 sm:py-5">
       <nav
-        className="mb-3 flex flex-wrap items-center gap-x-1.5 text-xs text-zinc-500"
+        className="mb-3 flex shrink-0 flex-wrap items-center gap-x-1.5 text-xs text-zinc-500"
         aria-label="Breadcrumb"
       >
         {crumbs.map((item, index) => (
@@ -62,7 +68,7 @@ export function PageShell({
         ))}
       </nav>
 
-      <header className="mb-6 flex flex-col gap-4 border-b border-zinc-200/80 pb-5 sm:flex-row sm:items-end sm:justify-between">
+      <header className="mb-4 flex shrink-0 flex-col gap-4 border-b border-zinc-200/80 pb-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
           <h1 className="flex items-center gap-2.5 text-lg font-semibold tracking-tight text-zinc-900 sm:text-xl">
             {PageIcon ? (
@@ -87,7 +93,23 @@ export function PageShell({
         ) : null}
       </header>
 
-      <div className="tg-page-stack">{children}</div>
+      <div
+        className={
+          contentLayout === 'pane'
+            ? 'flex min-h-0 flex-1 basis-0 flex-col overflow-hidden'
+            : 'tg-scroll-y min-h-0 flex-1 basis-0 pr-0.5'
+        }
+      >
+        <div
+          className={
+            contentLayout === 'pane'
+              ? 'tg-page-stack flex min-h-0 flex-1 flex-col'
+              : 'tg-page-stack'
+          }
+        >
+          {children}
+        </div>
+      </div>
     </div>
   );
 }

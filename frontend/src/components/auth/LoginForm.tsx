@@ -1,7 +1,6 @@
+import { Eye, EyeOff, Lock, LogIn, User } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { Button } from '../workspace/Button';
-import { FormField, TextInput } from '../workspace/FormField';
 
 type Props = {
   onSuccess?: (role: string) => void;
@@ -11,6 +10,7 @@ export function LoginForm({ onSuccess }: Props) {
   const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -30,44 +30,65 @@ export function LoginForm({ onSuccess }: Props) {
   }
 
   return (
-    <form className="space-y-4" onSubmit={onSubmit}>
-      <FormField label="Email">
-        <TextInput
+    <form className="auth-form" onSubmit={onSubmit}>
+      <div className="auth-input">
+        <User className="auth-input__icon" strokeWidth={1.75} aria-hidden />
+        <input
+          className="auth-input__field"
           type="email"
           name="email"
           autoComplete="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="nama@contoh.com"
+          placeholder="Email"
+          aria-label="Email"
           required
           disabled={loading}
         />
-      </FormField>
+      </div>
 
-      <FormField label="Password">
-        <TextInput
-          type="password"
+      <div className="auth-input auth-input--password">
+        <Lock className="auth-input__icon" strokeWidth={1.75} aria-hidden />
+        <input
+          className="auth-input__field"
+          type={showPassword ? 'text' : 'password'}
           name="password"
           autoComplete="current-password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          placeholder="Password"
+          aria-label="Password"
           required
           disabled={loading}
         />
-      </FormField>
+        <button
+          type="button"
+          className="auth-input__toggle"
+          onClick={() => setShowPassword((v) => !v)}
+          aria-pressed={showPassword}
+          aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
+          disabled={loading}
+        >
+          {showPassword ? (
+            <EyeOff className="auth-input__toggle-icon" strokeWidth={1.75} aria-hidden />
+          ) : (
+            <Eye className="auth-input__toggle-icon" strokeWidth={1.75} aria-hidden />
+          )}
+        </button>
+      </div>
 
       {error ? (
-        <p
-          className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800"
-          role="alert"
-        >
+        <p className="auth-form__alert" role="alert">
           {error}
         </p>
       ) : null}
 
-      <Button type="submit" block disabled={loading}>
+      <button type="submit" className="auth-form__submit" disabled={loading}>
+        {!loading ? (
+          <LogIn className="auth-form__submit-icon" strokeWidth={2} aria-hidden />
+        ) : null}
         {loading ? 'Memproses…' : 'Masuk'}
-      </Button>
+      </button>
     </form>
   );
 }

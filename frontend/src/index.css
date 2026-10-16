@@ -1,6 +1,18 @@
+body.auth-page-active {
+  overflow: hidden;
+  height: 100%;
+}
+
+body.auth-page-active #root {
+  height: 100%;
+  overflow: hidden;
+}
+
 :root {
   --color-muted: #64748b;
   --color-primary: #1e3a8a;
+  --color-primary-dark: #0d1b3e;
+  --color-input-bg: #f3f4f6;
   --color-danger-bg: #fef2f2;
   --color-success: #15803d;
   --color-success-bg: #f0fdf4;

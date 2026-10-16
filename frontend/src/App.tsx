@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import {
+  RequireAdmin,
   RequireAuditor,
   RequireDonor,
   RequireOrganizer,
@@ -21,6 +22,7 @@ import { ProfilePage } from './pages/ProfilePage';
 import { DonateCampaignPage } from './pages/DonateCampaignPage';
 import { VerifyDonationPage } from './pages/VerifyDonationPage';
 import { AuditorDashboardPage } from './pages/AuditorDashboardPage';
+import { AdminReconciliationPage } from './pages/AdminReconciliationPage';
 
 function ProtectedOrganizer({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -91,10 +93,26 @@ function AppRoutes() {
           }
         />
         <Route
+          path="/admin/reconciliation"
+          element={
+            <RequireAdmin>
+              <AdminReconciliationPage />
+            </RequireAdmin>
+          }
+        />
+        <Route
           path="/auditor"
           element={
             <RequireAuditor>
               <AuditorDashboardPage />
+            </RequireAuditor>
+          }
+        />
+        <Route
+          path="/auditor/profile"
+          element={
+            <RequireAuditor>
+              <ProfilePage />
             </RequireAuditor>
           }
         />

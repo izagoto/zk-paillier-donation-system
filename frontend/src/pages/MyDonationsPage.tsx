@@ -1,6 +1,7 @@
 import { Heart } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { apiRequest, type Campaign, type Donation } from '../api/client';
+import { Button } from '../components/workspace/Button';
 import { Link } from 'react-router-dom';
 import { ButtonLink } from '../components/workspace/Button';
 import { DataTable } from '../components/workspace/DataTable';
@@ -17,6 +18,8 @@ export function MyDonationsPage() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+
+  const [retryingId, setRetryingId] = useState<string | null>(null);
 
   const load = () => {
     setLoading(true);
@@ -38,6 +41,22 @@ export function MyDonationsPage() {
   useEffect(() => {
     void load();
   }, []);
+
+  async function retryDonation(donationId: string) {
+    setRetryingId(donationId);
+    setError('');
+    try {
+      await apiRequest(`/api/donations/${donationId}/retry`, {
+        method: 'POST',
+        auth: true,
+      });
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Retry gagal');
+    } finally {
+      setRetryingId(null);
+    }
+  }
 
   const titleById = useMemo(() => {
     const map = new Map<string, string>();
@@ -115,15 +134,27 @@ export function MyDonationsPage() {
                   : '—',
             },
             {
-              id: 'verify',
-              header: 'Bukti publik',
+              id: 'actions',
+              header: 'Aksi',
               render: (donation) => (
-                <Link
-                  to={`/verify/donation/${donation.id}`}
-                  className="text-xs font-semibold text-trust-primary hover:underline"
-                >
-                  Verifikasi
-                </Link>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Link
+                    to={`/verify/donation/${donation.id}`}
+                    className="text-xs font-semibold text-trust-primary hover:underline"
+                  >
+                    Verifikasi
+                  </Link>
+                  {donation.status === 'failed' ? (
+                    <Button
+                      variant="secondary"
+                      className="h-7 px-2 text-xs"
+                      disabled={retryingId === donation.id}
+                      onClick={() => void retryDonation(donation.id)}
+                    >
+                      {retryingId === donation.id ? 'Mencoba…' : 'Coba lagi'}
+                    </Button>
+                  ) : null}
+                </div>
               ),
             },
             {

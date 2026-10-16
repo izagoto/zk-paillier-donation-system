@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 
+	"github.com/izagoto/zk-paillier-donation-system/internal/auth"
 	"github.com/izagoto/zk-paillier-donation-system/internal/blockchain"
 	"github.com/izagoto/zk-paillier-donation-system/internal/campaign"
 	"github.com/izagoto/zk-paillier-donation-system/internal/crypto/paillier"
@@ -26,6 +27,9 @@ var (
 	ErrInvalidDonationStatus = errors.New("invalid donation status")
 	ErrInvalidZKProof        = errors.New("invalid zk proof")
 	ErrIdempotencyKeyRequired = errors.New("idempotency key is required")
+	ErrDonationNotFound       = errors.New("donation not found")
+	ErrDonationNotRetryable   = errors.New("donation cannot be retried")
+	ErrForbidden              = errors.New("forbidden")
 )
 
 type Service struct {
@@ -69,13 +73,13 @@ func (s *Service) Create(
 	providedCommitment string,
 	proof zk.Proof,
 	idempotencyKey string,
-) (*Donation, error) {
+) (*Donation, bool, error) {
 	amount = strings.TrimSpace(amount)
 	providedCommitment = strings.TrimSpace(providedCommitment)
 	idempotencyKey = strings.TrimSpace(idempotencyKey)
 
 	if idempotencyKey == "" {
-		return nil, ErrIdempotencyKeyRequired
+		return nil, false, ErrIdempotencyKeyRequired
 	}
 
 	existing, err := s.repository.FindByIdempotencyKey(
@@ -83,19 +87,19 @@ func (s *Service) Create(
 		idempotencyKey,
 	)
 	if err == nil && existing != nil {
-		return existing, nil
+		return existing, true, nil
 	}
 
 	if amount == "" {
-		return nil, ErrAmountRequired
+		return nil, false, ErrAmountRequired
 	}
 
 	if !isValidAmount(amount) {
-		return nil, ErrInvalidAmount
+		return nil, false, ErrInvalidAmount
 	}
 
 	if providedCommitment == "" {
-		return nil, ErrCommitmentRequired
+		return nil, false, ErrCommitmentRequired
 	}
 
 	campaignData, err := s.campaignRepository.FindByID(
@@ -103,21 +107,21 @@ func (s *Service) Create(
 		campaignID,
 	)
 	if err != nil {
-		return nil, ErrCampaignNotFound
+		return nil, false, ErrCampaignNotFound
 	}
 
 	if campaignData.Status != "active" {
-		return nil, ErrCampaignNotActive
+		return nil, false, ErrCampaignNotActive
 	}
 
 	if compareAmount(amount, campaignData.MaxDonation) > 0 {
-		return nil, ErrAmountExceedsMaximum
+		return nil, false, ErrAmountExceedsMaximum
 	}
 
 	// Verify the ZK proof using trusted campaign data.
 	// campaign_max is taken from the database, not from the client.
 	if s.zkVerifier == nil {
-		return nil, errors.New("zk verifier is not configured")
+		return nil, false, errors.New("zk verifier is not configured")
 	}
 
 	publicInputs := zk.PublicInputs{
@@ -130,26 +134,26 @@ func (s *Service) Create(
 		proof,
 		publicInputs,
 	); err != nil {
-		return nil, ErrInvalidZKProof
+		return nil, false, ErrInvalidZKProof
 	}
 
 	message, ok := new(big.Int).SetString(amount, 10)
 	if !ok {
-		return nil, ErrInvalidAmount
+		return nil, false, ErrInvalidAmount
 	}
 
 	if s.paillierPublicKey == nil {
-		return nil, errors.New("paillier public key is not configured")
+		return nil, false, errors.New("paillier public key is not configured")
 	}
 
 	encryptedAmount, err := s.paillierPublicKey.Encrypt(message)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	proofJSON, err := json.Marshal(proof)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	// Store the donation first as pending.
@@ -163,68 +167,144 @@ func (s *Service) Create(
 		idempotencyKey,
 	)
 	if err != nil {
-		return nil, err
+		if IsUniqueViolation(err) {
+			existing, findErr := s.repository.FindByIdempotencyKey(ctx, idempotencyKey)
+			if findErr == nil && existing != nil {
+				return existing, true, nil
+			}
+		}
+		return nil, false, err
 	}
 
 	if s.blockchainRegistry == nil {
-		return nil, errors.New("blockchain registry is not configured")
+		return nil, false, errors.New("blockchain registry is not configured")
 	}
 
 	if s.blockchainSigner == nil {
-		return nil, errors.New("blockchain signer is not configured")
+		return nil, false, errors.New("blockchain signer is not configured")
+	}
+
+	donation.ZKProof = string(proofJSON)
+	donation.EncryptedAmount = encryptedAmount.String()
+
+	if err := s.finalizeOnChain(
+		ctx,
+		donation,
+		campaignData.MaxDonation,
+	); err != nil {
+		return nil, false, err
+	}
+
+	return donation, false, nil
+}
+
+func (s *Service) finalizeOnChain(
+	ctx context.Context,
+	donation *Donation,
+	campaignMax string,
+) error {
+	if s.blockchainRegistry == nil {
+		return errors.New("blockchain registry is not configured")
+	}
+
+	if s.blockchainSigner == nil {
+		return errors.New("blockchain signer is not configured")
 	}
 
 	payload := blockchain.NewDonationPayload(
-		campaignID.String(),
-		campaignData.MaxDonation,
-		providedCommitment,
-		encryptedAmount.String(),
-		string(proofJSON),
+		donation.CampaignID.String(),
+		campaignMax,
+		donation.Commitment,
+		donation.EncryptedAmount,
+		donation.ZKProof,
 	)
 
-	// Record the donation on-chain and wait until
-	// the transaction is mined successfully.
 	txHash, err := s.blockchainRegistry.RecordDonation(
 		ctx,
 		s.blockchainSigner,
 		payload,
 	)
 	if err != nil {
-		_ = s.repository.UpdateStatus(ctx, donation.ID, "failed")
-		return nil, err
+		_ = s.repository.TransitionStatus(ctx, donation.ID, "pending", "failed")
+		return err
 	}
 
-	// Store the confirmed blockchain transaction hash.
-	if err := s.repository.UpdateTxHash(
-		ctx,
-		donation.ID,
-		txHash,
-	); err != nil {
-		return nil, err
+	if err := s.repository.UpdateTxHash(ctx, donation.ID, txHash); err != nil {
+		return err
 	}
 
-	// The blockchain transaction has already been mined
-	// successfully, so the donation can be marked confirmed.
-	if err := s.repository.UpdateStatus(
+	if err := s.repository.TransitionStatus(
 		ctx,
 		donation.ID,
+		"pending",
 		"confirmed",
 	); err != nil {
+		return err
+	}
+
+	if err := s.IncrementAggregate(
+		ctx,
+		donation.CampaignID,
+		donation.EncryptedAmount,
+	); err != nil {
+		return err
+	}
+
+	donation.TxHash = txHash
+	donation.Status = "confirmed"
+
+	return nil
+}
+
+func (s *Service) RetryFailed(
+	ctx context.Context,
+	donationID uuid.UUID,
+	actorID uuid.UUID,
+	actorRole string,
+) (*Donation, error) {
+	donation, err := s.repository.FindByID(ctx, donationID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrDonationNotFound
+		}
 		return nil, err
 	}
 
-	// Increment the encrypted aggregate with the newly confirmed donation.
-	if err := s.IncrementAggregate(
+	if donation.Status != "failed" {
+		return nil, ErrDonationNotRetryable
+	}
+
+	if actorRole != auth.RoleAdmin && donation.DonorID != actorID {
+		return nil, ErrForbidden
+	}
+
+	if donation.ZKProof == "" || donation.EncryptedAmount == "" {
+		return nil, ErrDonationNotRetryable
+	}
+
+	campaignData, err := s.campaignRepository.FindByID(ctx, donation.CampaignID)
+	if err != nil {
+		return nil, ErrCampaignNotFound
+	}
+
+	if campaignData.Status != "active" {
+		return nil, ErrCampaignNotActive
+	}
+
+	if err := s.repository.TransitionStatus(
 		ctx,
-		campaignID,
-		encryptedAmount.String(),
+		donation.ID,
+		"failed",
+		"pending",
 	); err != nil {
 		return nil, err
 	}
 
-	// Reflect the final state in the returned object.
-	donation.TxHash = txHash
-	donation.Status = "confirmed"
+	donation.Status = "pending"
+
+	if err := s.finalizeOnChain(ctx, donation, campaignData.MaxDonation); err != nil {
+		return nil, err
+	}
 
 	return donation, nil
 }

@@ -2,6 +2,7 @@ import type { LucideIcon } from 'lucide-react';
 import {
   FolderKanban,
   Heart,
+  ShieldCheck,
   LayoutDashboard,
   Plus,
   Receipt,
@@ -9,7 +10,7 @@ import {
   User,
 } from 'lucide-react';
 import { getPostLoginPath } from './flow';
-import { canAudit, canCreateCampaign, canDonate } from './roles';
+import { canAudit, canCreateCampaign, canDonate, canManageAdmin } from './roles';
 
 /** Label navigasi & judul halaman — satu sumber agar konsisten di header, breadcrumb, dan menu. */
 export const NAV = {
@@ -47,7 +48,10 @@ export function profilePathForRole(role: string): string {
   if (canDonate(role)) {
     return '/donor/profile';
   }
-  return '/organizer/profile';
+  if (canAudit(role)) {
+    return '/auditor/profile';
+  }
+  return '/donor/profile';
 }
 
 export function campaignListBackPath(role?: string): string {
@@ -82,17 +86,25 @@ export function navIsActive(item: NavItem, pathname: string, search: string) {
 
 export function workspaceNavGroupsForRole(role: string): NavGroup[] {
   if (canCreateCampaign(role)) {
+    const summaryItems: NavItem[] = [
+      {
+        to: '/organizer',
+        label: NAV.dashboard,
+        icon: LayoutDashboard,
+        end: true,
+      },
+    ];
+    if (canManageAdmin(role)) {
+      summaryItems.push({
+        to: '/admin/reconciliation',
+        label: 'Rekonsiliasi',
+        icon: ShieldCheck,
+      });
+    }
     return [
       {
         title: 'Ringkasan',
-        items: [
-          {
-            to: '/organizer',
-            label: NAV.dashboard,
-            icon: LayoutDashboard,
-            end: true,
-          },
-        ],
+        items: summaryItems,
       },
       {
         title: 'Campaign',
@@ -137,7 +149,7 @@ export function workspaceNavGroupsForRole(role: string): NavGroup[] {
       },
       {
         title: 'Akun',
-        items: [{ to: '/organizer/profile', label: NAV.profile, icon: User }],
+        items: [{ to: '/auditor/profile', label: NAV.profile, icon: User }],
       },
     ];
   }
@@ -210,6 +222,11 @@ export function breadcrumbsForPath(
   const items: BreadcrumbItem[] = role
     ? [{ label: NAV.dashboard, to: homeTo }]
     : [{ label: NAV.home, to: '/' }];
+
+  if (pathname === '/admin/reconciliation') {
+    items.push({ label: 'Rekonsiliasi' });
+    return items;
+  }
 
   if (pathname.startsWith('/verify/donation/')) {
     items.push({ label: 'Verifikasi donasi' });

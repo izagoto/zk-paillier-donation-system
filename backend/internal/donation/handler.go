@@ -107,7 +107,7 @@ func (h *Handler) Create(c *gin.Context) {
 		return
 	}
 
-	donation, err := h.service.Create(
+	donation, replay, err := h.service.Create(
 		c.Request.Context(),
 		campaignID,
 		userID,
@@ -164,6 +164,11 @@ func (h *Handler) Create(c *gin.Context) {
 			})
 		}
 
+		return
+	}
+
+	if replay {
+		c.JSON(http.StatusOK, toDonationResponse(donation))
 		return
 	}
 
@@ -409,4 +414,117 @@ func (h *Handler) GetCampaignAggregate(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, response)
+}
+
+func (h *Handler) RetryFailed(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid donation id"})
+		return
+	}
+
+	userIDValue, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
+	userID, ok := userIDValue.(uuid.UUID)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid user identity"})
+		return
+	}
+
+	roleValue, _ := c.Get("user_role")
+	role, _ := roleValue.(string)
+
+	donation, err := h.service.RetryFailed(
+		c.Request.Context(),
+		id,
+		userID,
+		role,
+	)
+	if err != nil {
+		switch err {
+		case ErrDonationNotFound:
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		case ErrDonationNotRetryable, ErrCampaignNotActive:
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		case ErrForbidden:
+			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		case ErrCampaignNotFound:
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "retry failed"})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, toDonationResponse(donation))
+}
+
+func (h *Handler) AdminReconciliationOverview(c *gin.Context) {
+	overview, err := h.service.GetReconciliationOverview(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to load overview"})
+		return
+	}
+
+	c.JSON(http.StatusOK, overview)
+}
+
+func (h *Handler) AdminListArchive(c *gin.Context) {
+	limit := 50
+	if raw := c.Query("limit"); raw != "" {
+		if parsed, err := strconv.Atoi(raw); err == nil {
+			limit = parsed
+		}
+	}
+
+	rows, err := h.service.ListArchiveRows(c.Request.Context(), limit)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to load archive"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": rows})
+}
+
+func (h *Handler) AdminReconcileCampaignAggregate(c *gin.Context) {
+	campaignID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid campaign id"})
+		return
+	}
+
+	result, err := h.service.ReconcileCampaignAggregate(
+		c.Request.Context(),
+		campaignID,
+	)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "reconcile failed"})
+		return
+	}
+
+	c.JSON(http.StatusOK, result)
+}
+
+func (h *Handler) AdminReconcilePending(c *gin.Context) {
+	limit := 50
+	if raw := c.Query("limit"); raw != "" {
+		if parsed, err := strconv.Atoi(raw); err == nil {
+			limit = parsed
+		}
+	}
+
+	result, err := h.service.ReconcilePendingDonations(
+		c.Request.Context(),
+		limit,
+	)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "reconcile pending failed"})
+		return
+	}
+
+	c.JSON(http.StatusOK, result)
 }

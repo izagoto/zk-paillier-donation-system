@@ -81,6 +81,7 @@ export function DataTable<T>({
             <SelectMenu
               value={pageSize}
               onChange={setPageSize}
+              mono
               aria-label="Jumlah entri per halaman"
               options={pageSizeOptions.map((size) => ({
                 value: size,

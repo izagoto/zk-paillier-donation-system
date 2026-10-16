@@ -37,7 +37,11 @@ Filter **Campaign saya**: `?mine=1` + `created_by === user.id` di klien.
 
 ## Beranda (`/`)
 
-Tamu melihat penjelasan produk dan cuplikan campaign. Pengguna login yang membuka `/` diarahkan ke dashboard peran.
+Tamu melihat ringkasan campaign aktif (maks. 6) dalam panel **Campaign aktif**. Pengguna login yang membuka `/` diarahkan ke dashboard peran.
+
+## Login
+
+Halaman `/login` memakai layout kartu split (`AuthLayout` + `auth.css`), mark `trustgive-mark.svg`, redirect per role setelah sukses.
 
 ## API campaign (metadata)
 

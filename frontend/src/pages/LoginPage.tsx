@@ -9,7 +9,12 @@ export function LoginPage() {
   return (
     <AuthLayout
       title="Masuk ke akun Anda"
-      subtitle="Masuk dengan email dan password yang sudah terdaftar."
+      subtitle="Kelola campaign dan kirim donasi dengan bukti kriptografis."
+      footer={
+        <p>
+          Belum punya akun? Hubungi administrator TrustGive untuk pendaftaran.
+        </p>
+      }
     >
       <LoginForm onSuccess={(role) => navigate(getPostLoginPath(role))} />
     </AuthLayout>

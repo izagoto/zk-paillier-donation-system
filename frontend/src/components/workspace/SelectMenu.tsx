@@ -11,6 +11,8 @@ type Props<T extends string | number> = {
   onChange: (value: T) => void;
   options: SelectMenuOption<T>[];
   className?: string;
+  /** Angka / kode — pakai font mono di label */
+  mono?: boolean;
   'aria-label'?: string;
 };
 
@@ -19,6 +21,7 @@ export function SelectMenu<T extends string | number>({
   onChange,
   options,
   className = '',
+  mono = false,
   'aria-label': ariaLabel,
 }: Props<T>) {
   const [open, setOpen] = useState(false);
@@ -63,7 +66,9 @@ export function SelectMenu<T extends string | number>({
         aria-expanded={open}
         aria-haspopup="listbox"
         onClick={() => setOpen((v) => !v)}
-        className={`flex min-w-[3.25rem] items-center justify-between gap-1 rounded-lg border bg-white px-3 py-1.5 text-sm font-mono text-[#18181b] shadow-sm transition-all hover:bg-[#fafafa] focus:outline-none ${
+        className={`flex h-10 min-w-[3.25rem] items-center justify-between gap-2 rounded-lg border bg-white px-3 text-sm text-trust-navy shadow-sm transition-all hover:bg-[#fafafa] focus:outline-none ${
+          mono ? 'font-mono' : 'font-sans'
+        } ${
           open
             ? 'border-trust-primary text-trust-primary ring-2 ring-trust-primary/15'
             : 'border-[#e4e4e7]'
@@ -102,7 +107,7 @@ export function SelectMenu<T extends string | number>({
                       : 'text-[#52525b] hover:bg-[#f4f4f5] hover:text-[#18181b]'
                   }`}
                 >
-                  <span className="font-mono">{opt.label}</span>
+                  <span className={mono ? 'font-mono' : ''}>{opt.label}</span>
                   {selected ? (
                     <Check className="h-3 w-3 shrink-0 text-trust-primary" aria-hidden />
                   ) : null}

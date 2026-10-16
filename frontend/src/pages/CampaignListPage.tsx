@@ -8,6 +8,7 @@ import { EmptyState } from '../components/workspace/EmptyState';
 import { PageAlert } from '../components/workspace/PageAlert';
 import { PageShell } from '../components/workspace/PageShell';
 import { SearchField } from '../components/workspace/SearchField';
+import { SelectMenu } from '../components/workspace/SelectMenu';
 import { SegmentTabs } from '../components/workspace/SegmentTabs';
 import { useAuth } from '../context/AuthContext';
 import { useCampaignAggregates } from '../hooks/useCampaignAggregates';
@@ -24,7 +25,7 @@ export function CampaignListPage() {
     mineOnly && user !== null && canCreateCampaign(user.role);
 
   const { campaigns, loading, error, reload } = useCampaigns();
-  const [filter, setFilter] = useState<'all' | 'active'>('all');
+  const [filter, setFilter] = useState<'all' | 'active'>('active');
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
 
@@ -72,6 +73,7 @@ export function CampaignListPage() {
 
   return (
     <PageShell
+      contentLayout="pane"
       title={NAV.exploreCampaigns}
       subtitle="Buka detail campaign untuk melihat perkembangan dan mengirim donasi."
       actions={
@@ -86,6 +88,7 @@ export function CampaignListPage() {
       }
     >
       <DataTableCard
+        scrollBody="fill"
         toolbar={
           <>
             <SearchField
@@ -96,17 +99,16 @@ export function CampaignListPage() {
             />
             <div className="flex flex-wrap items-center gap-3">
               {categories.length > 0 ? (
-                <select
-                  className="tg-input h-9 w-auto min-w-[10rem] text-sm"
+                <SelectMenu
                   value={category}
-                  onChange={(e) => setCategory(e.target.value)}
+                  onChange={setCategory}
                   aria-label="Filter kategori"
-                >
-                  <option value="">Semua kategori</option>
-                  {categories.map((cat) => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
+                  className="min-w-[10rem]"
+                  options={[
+                    { value: '', label: 'Semua kategori' },
+                    ...categories.map((cat) => ({ value: cat, label: cat })),
+                  ]}
+                />
               ) : null}
               <SegmentTabs
                 value={filter}

@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { getPostLoginPath } from '../../lib/flow';
 import { navIsActive, profilePathForRole, workspaceNavForRole } from '../../lib/navigation';
 import { roleLabel } from '../../lib/roles';
+import { TrustGiveLogo } from '../TrustGiveLogo';
 
 function navLinkClass(isActive: boolean) {
   return `inline-flex items-center gap-2.5 rounded-lg px-3.5 py-2.5 text-[length:var(--text-header-nav)] font-semibold transition-colors whitespace-nowrap ${
@@ -57,23 +58,12 @@ export function AppHeader() {
     >
       <div className="tg-shell-width grid h-[var(--height-header)] grid-cols-[1fr_auto_1fr] items-center gap-3">
         <div className="flex min-w-0 items-center justify-start">
-          <Link
-            to={homePath}
-            className="flex shrink-0 items-center gap-2.5 text-trust-navy no-underline hover:no-underline"
-          >
-            <span
-              className="flex h-9 w-9 items-center justify-center rounded-md bg-trust-primary text-sm font-semibold text-white"
-              aria-hidden
-            >
-              TG
-            </span>
-            <span className="hidden flex-col leading-tight sm:flex">
-              <span className="text-[length:var(--text-header-brand)] font-semibold tracking-tight">
-                <span className="text-trust-primary">Trust</span>
-                <span className="text-[#0d1b3e]">Give</span>
-              </span>
-            </span>
-          </Link>
+          <TrustGiveLogo
+            linkToHome
+            homeTo={homePath}
+            className="shrink-0 text-trust-navy"
+            wordmarkClassName="hidden sm:flex"
+          />
         </div>
 
         <nav

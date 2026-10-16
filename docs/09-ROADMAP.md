@@ -12,13 +12,17 @@ Cakupan: auth, campaign, Paillier, circuit dan Groth16, smart contract, API dona
 - [x] Investigasi duplicate historis.
 - [x] Backup database sebelum perbaikan.
 - [x] Migration 000005 membuat tabel archive.
-- [ ] Verifikasi isi tabel archive dan rencana reconciliation.
-- [ ] Tetapkan canonical record dengan bukti yang memadai.
-- [ ] Pertahankan audit trail dan rekonsiliasi aggregate bila diperlukan.
+- [x] Verifikasi isi tabel archive dan rencana reconciliation (lihat [13-RELIABILITY.md](13-RELIABILITY.md)).
+- [x] Tetapkan kebijakan canonical record (archive read-only; live = confirmed + tx valid).
+- [x] Pertahankan audit trail dan rekonsiliasi aggregate bila diperlukan (admin UI + API).
 - [x] Terapkan idempotency key pada database dan service (migration 000006).
-- [ ] Terapkan state machine yang aman.
-- [ ] Implementasikan retry dan recovery transaksi blockchain.
-- [ ] Uji duplicate, concurrency, kegagalan DB/RPC, dan aggregate.
+- [x] Respons HTTP 200 pada replay idempotency key; tangani race unique constraint.
+- [x] Transisi status donasi `pending` → `confirmed` / `failed` (tanpa lompatan sembarangan).
+- [x] Retry donasi `failed` (`POST /api/donations/:id/retry`) tanpa baris baru.
+- [x] Overview rekonsiliasi + hitung ulang agregat (admin API + UI).
+- [x] Rekonsiliasi chain vs DB untuk `pending` (admin `POST /api/admin/donations/reconcile-pending`).
+- [ ] Worker otomatis / terjadwal untuk RPC timeout (saat ini manual via admin).
+- [ ] Uji beban concurrent idempotency otomatis (uji manual di [13-RELIABILITY.md](13-RELIABILITY.md)).
 
 **Exit criteria:** retry tidak menggandakan donasi; status dan aggregate dapat direkonsiliasi; bukti historis tetap terpelihara.
 
@@ -33,6 +37,7 @@ Cakupan: auth, campaign, Paillier, circuit dan Groth16, smart contract, API dona
 - [x] Status transaksi dan riwayat donasi.
 - [x] Ringkasan aggregate (termasuk dekripsi demo di backend).
 - [x] UI TrustGive konsisten (tipografi, warna, komponen form/tombol).
+- [x] Halaman donasi penuh, verifikasi publik donasi, dashboard auditor, metadata campaign.
 
 **Exit criteria:** pengguna menyelesaikan happy path tanpa terminal/API client.
 
@@ -59,4 +64,4 @@ Cakupan: auth, campaign, Paillier, circuit dan Groth16, smart contract, API dona
 
 ## Next step langsung
 
-Verifikasi tabel `donations_duplicate_archive` pada database version 5, lalu susun rencana reconciliation yang tidak mengubah confirmed history berdasarkan asumsi. Lanjutkan state machine donasi, retry/recovery blockchain, dan uji concurrency (idempotency key migration **000006** sudah ada).
+Untuk sidang: `./backend/scripts/setup_demo_presentation.sh`, buat akun `admin` via register API, smoke test happy path. Penelitian lanjutan: proof-to-ciphertext binding (Phase 4), E2E CI (Phase 5).

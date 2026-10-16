@@ -1,6 +1,7 @@
 import { Menu, X } from 'lucide-react';
-import { useState } from 'react';
-import { Link, NavLink, Outlet } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { NavLink, Outlet } from 'react-router-dom';
+import { TrustGiveLogo } from '../TrustGiveLogo';
 import { ButtonLink } from '../workspace/Button';
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
@@ -13,27 +14,16 @@ const navLinkClass = ({ isActive }: { isActive: boolean }) =>
 export function PublicLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  useEffect(() => {
+    document.body.classList.add('public-shell-active');
+    return () => document.body.classList.remove('public-shell-active');
+  }, []);
+
   return (
-    <div className="flex min-h-screen flex-col bg-trust-bg">
-      <header className="sticky top-0 z-40 border-b border-trust-border bg-white">
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-trust-bg">
+      <header className="z-40 shrink-0 border-b border-trust-border bg-white">
         <div className="mx-auto flex h-[var(--height-header)] max-w-6xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-          <Link to="/" className="flex items-center gap-2.5 text-trust-navy no-underline">
-            <span
-              className="flex h-9 w-9 items-center justify-center rounded-md bg-trust-primary text-sm font-semibold text-white"
-              aria-hidden
-            >
-              TG
-            </span>
-            <span className="flex flex-col leading-tight">
-              <span className="text-[length:var(--text-header-brand)] font-semibold tracking-tight">
-                <span className="text-trust-primary">Trust</span>
-                <span className="text-[#0d1b3e]">Give</span>
-              </span>
-              <span className="hidden text-[11px] font-semibold text-slate-500 sm:block">
-                Donasi dapat diaudit
-              </span>
-            </span>
-          </Link>
+          <TrustGiveLogo linkToHome className="text-trust-navy" />
 
           <nav
             className="hidden items-center gap-1 md:flex"
@@ -93,11 +83,13 @@ export function PublicLayout() {
         ) : null}
       </header>
 
-      <main className="flex-1">
-        <Outlet />
+      <main className="flex min-h-0 flex-1 basis-0 flex-col overflow-hidden">
+        <div className="flex min-h-0 flex-1 basis-0 flex-col overflow-hidden">
+          <Outlet />
+        </div>
       </main>
 
-      <footer className="border-t border-trust-border bg-trust-surface">
+      <footer className="shrink-0 border-t border-trust-border bg-trust-surface">
         <div className="mx-auto max-w-6xl px-4 py-8 text-sm text-trust-muted sm:px-6 lg:px-8">
           <p className="max-w-2xl text-trust-navy">
             TrustGive membantu pengelola campaign menerima donasi dengan jejak yang

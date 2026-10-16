@@ -1,4 +1,5 @@
-import { Link } from 'react-router-dom';
+import { useEffect } from 'react';
+import { TrustGiveLogo } from './TrustGiveLogo';
 
 export function AuthLayout({
   title,
@@ -7,52 +8,54 @@ export function AuthLayout({
   footer,
 }: {
   title: string;
-  subtitle?: string;
+  subtitle: string;
   children: React.ReactNode;
   footer?: React.ReactNode;
 }) {
-  return (
-    <div className="flex min-h-screen flex-col bg-trust-bg">
-      <header className="border-b border-trust-border bg-white">
-        <div className="mx-auto flex h-[var(--height-header)] max-w-6xl items-center px-4 sm:px-6 lg:px-8">
-          <Link
-            to="/"
-            className="flex items-center gap-2.5 text-trust-navy no-underline hover:no-underline"
-          >
-            <span
-              className="flex h-9 w-9 items-center justify-center rounded-md bg-trust-primary text-sm font-semibold text-white"
-              aria-hidden
-            >
-              TG
-            </span>
-            <span className="text-sm font-semibold tracking-tight">
-              <span className="text-trust-primary">Trust</span>
-              <span className="text-zinc-900">Give</span>
-            </span>
-          </Link>
-        </div>
-      </header>
+  useEffect(() => {
+    document.body.classList.add('auth-page-active');
+    return () => document.body.classList.remove('auth-page-active');
+  }, []);
 
-      <main className="flex flex-1 justify-center px-4 py-10 sm:py-12">
-        <div className="w-full max-w-[26rem]">
-          <div className="rounded-lg border border-trust-border bg-white p-6 shadow-[var(--shadow-trust-card)] sm:p-8">
-            <header className="mb-6">
-              <h1 className="text-lg font-semibold text-zinc-900">{title}</h1>
-              {subtitle ? (
-                <p className="mt-1.5 text-sm leading-relaxed text-zinc-500">
-                  {subtitle}
-                </p>
-              ) : null}
+  return (
+    <div className="auth-screen">
+      <div className="auth-card">
+        <div className="auth-card__brand">
+          <div className="auth-card__decor" aria-hidden>
+            <span className="auth-card__circle auth-card__circle--1" />
+            <span className="auth-card__circle auth-card__circle--2" />
+            <span className="auth-card__circle auth-card__circle--3" />
+            <span className="auth-card__circle auth-card__circle--4" />
+          </div>
+          <div className="auth-brand">
+            <TrustGiveLogo
+              linkToHome
+              onDark
+              className="auth-brand__logo mb-1 justify-center"
+            />
+            <p className="auth-brand__tag">Donasi dapat diaudit</p>
+            <h2 className="auth-brand__headline">
+              Transparansi campaign, privasi nominal donatur
+            </h2>
+            <ul className="auth-brand__list">
+              <li>Jejak donasi on-chain</li>
+              <li>Agregat terenkripsi (Paillier)</li>
+              <li>Bukti zk untuk nominal sah</li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="auth-card__form">
+          <div className="auth-form-wrap">
+            <header className="auth-form__header">
+              <h1>{title}</h1>
+              <p>{subtitle}</p>
             </header>
             {children}
-            {footer ? <footer className="mt-6 border-t border-zinc-100 pt-6">{footer}</footer> : null}
+            {footer ? <footer className="auth-form__footer">{footer}</footer> : null}
           </div>
-
-          <p className="mt-5 text-center text-xs leading-relaxed text-zinc-500">
-            Belum punya akun? Hubungi administrator TrustGive untuk pendaftaran.
-          </p>
         </div>
-      </main>
+      </div>
     </div>
   );
 }

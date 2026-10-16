@@ -32,12 +32,14 @@
     @apply bg-trust-bg text-trust-navy antialiased;
   }
 
-  body.workspace-active {
+  body.workspace-active,
+  body.public-shell-active {
     @apply h-full overflow-hidden bg-trust-bg text-trust-navy;
   }
 
-  body.workspace-active #root {
-    @apply h-full overflow-hidden;
+  body.workspace-active #root,
+  body.public-shell-active #root {
+    @apply flex h-full min-h-0 flex-col overflow-hidden;
   }
 
   body.workspace-active :where(p, li, dt, dd, th, td, label, h1, h2, h3, h4) {
@@ -272,5 +274,17 @@
 
   .tg-page-stack {
     @apply flex flex-col gap-5;
+  }
+
+  .tg-scroll-y {
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .tg-scroll-y::-webkit-scrollbar {
+    display: none;
   }
 }
