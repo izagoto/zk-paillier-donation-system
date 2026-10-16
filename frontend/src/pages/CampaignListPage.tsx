@@ -6,6 +6,7 @@ import { Alert } from '../components/ui/Alert';
 import { PageHeader } from '../components/ui/PageHeader';
 import { Spinner } from '../components/ui/Spinner';
 import { useAuth } from '../context/AuthContext';
+import { canCreateCampaign } from '../lib/roles';
 
 export function CampaignListPage() {
   const { user } = useAuth();
@@ -36,7 +37,7 @@ export function CampaignListPage() {
         title="Semua campaign"
         description="Pilih campaign untuk melihat detail, riwayat donasi on-chain, dan ringkasan agregat terenkripsi."
         actions={
-          user ? (
+          user && canCreateCampaign(user.role) ? (
             <Link to="/campaigns/new" className="link-btn link-btn--primary">
               + Buat campaign
             </Link>

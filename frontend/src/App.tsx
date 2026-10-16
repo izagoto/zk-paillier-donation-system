@@ -2,13 +2,14 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { Spinner } from './components/ui/Spinner';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { canCreateCampaign } from './lib/roles';
 import { CampaignDetailPage } from './pages/CampaignDetailPage';
 import { CampaignListPage } from './pages/CampaignListPage';
 import { CreateCampaignPage } from './pages/CreateCampaignPage';
 import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
 
-function Protected({ children }: { children: React.ReactNode }) {
+function ProtectedOrganizer({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   if (loading) {
     return (
@@ -19,6 +20,9 @@ function Protected({ children }: { children: React.ReactNode }) {
   }
   if (!user) {
     return <Navigate to="/login" replace />;
+  }
+  if (!canCreateCampaign(user.role)) {
+    return <Navigate to="/campaigns" replace />;
   }
   return children;
 }
@@ -33,9 +37,9 @@ function AppRoutes() {
         <Route
           path="/campaigns/new"
           element={
-            <Protected>
+            <ProtectedOrganizer>
               <CreateCampaignPage />
-            </Protected>
+            </ProtectedOrganizer>
           }
         />
         <Route path="/campaigns/:id" element={<CampaignDetailPage />} />

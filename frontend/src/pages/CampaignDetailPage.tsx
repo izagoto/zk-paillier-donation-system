@@ -19,6 +19,7 @@ import { Field, Input } from '../components/ui/Field';
 import { Spinner } from '../components/ui/Spinner';
 import { Stat } from '../components/ui/Stat';
 import { useAuth } from '../context/AuthContext';
+import { canDonate } from '../lib/roles';
 import {
   formatAmount,
   formatDateTime,
@@ -251,7 +252,7 @@ export function CampaignDetailPage() {
         </div>
 
         <aside className="detail-aside">
-          {user && campaign.status === 'active' ? (
+          {user && canDonate(user.role) && campaign.status === 'active' ? (
             <Card
               title="Donasi sekarang"
               subtitle={`Maks. Rp ${formatAmount(campaign.max_donation)} per transaksi`}
@@ -299,8 +300,13 @@ export function CampaignDetailPage() {
             <Card title="Donasi" padding="md">
               {!user ? (
                 <p>
-                  <Link to="/login">Masuk</Link> untuk mengirim donasi ke
-                  campaign ini.
+                  <Link to="/login">Masuk</Link> sebagai donatur untuk mengirim
+                  donasi ke campaign ini.
+                </p>
+              ) : !canDonate(user.role) ? (
+                <p>
+                  Akun Anda ({user.role}) tidak memiliki izin donasi. Gunakan
+                  akun donatur atau admin.
                 </p>
               ) : (
                 <p>Campaign tidak aktif; donasi ditutup.</p>

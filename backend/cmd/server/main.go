@@ -100,6 +100,7 @@ func main() {
 	r := router.Setup(
 		db,
 		cfg.JWTSecret,
+		cfg.BootstrapToken,
 		paillierKeyManager.PublicKey,
 		paillierKeyManager.PrivateKey,
 		zkVerifier,

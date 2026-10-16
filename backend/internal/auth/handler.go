@@ -10,20 +10,27 @@ import (
 )
 
 type Handler struct {
-	service    *Service
-	jwtManager *JWTManager
+	service        *Service
+	jwtManager     *JWTManager
+	bootstrapToken string
 }
 
-func NewHandler(service *Service, jwtManager *JWTManager) *Handler {
+func NewHandler(
+	service *Service,
+	jwtManager *JWTManager,
+	bootstrapToken string,
+) *Handler {
 	return &Handler{
-		service:    service,
-		jwtManager: jwtManager,
+		service:        service,
+		jwtManager:     jwtManager,
+		bootstrapToken: bootstrapToken,
 	}
 }
 
 type registerRequest struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
+	Role     string `json:"role"`
 }
 
 type loginRequest struct {
@@ -41,15 +48,40 @@ func (h *Handler) Register(c *gin.Context) {
 		return
 	}
 
+	count, err := h.service.CountUsers(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "internal server error",
+		})
+		return
+	}
+
+	if count == 0 && req.Role == "" {
+		req.Role = RoleAdmin
+	}
+
+	if !h.canRegisterUser(c, count) {
+		c.JSON(http.StatusForbidden, gin.H{
+			"error": ErrForbidden.Error(),
+		})
+		return
+	}
+
 	user, err := h.service.Register(
 		c.Request.Context(),
 		req.Email,
 		req.Password,
+		req.Role,
 	)
 	if err != nil {
 		switch {
 		case errors.Is(err, ErrEmailRequired),
 			errors.Is(err, ErrPasswordRequired):
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": err.Error(),
+			})
+
+		case errors.Is(err, ErrInvalidRole):
 			c.JSON(http.StatusBadRequest, gin.H{
 				"error": err.Error(),
 			})
@@ -164,4 +196,19 @@ func (h *Handler) Me(c *gin.Context) {
 		"email": user.Email,
 		"role":  user.Role,
 	})
+}
+
+func (h *Handler) canRegisterUser(c *gin.Context, userCount int64) bool {
+	if roleValue, ok := c.Get("user_role"); ok {
+		if role, ok := roleValue.(string); ok && CanManageUsers(role) {
+			return true
+		}
+	}
+
+	if h.bootstrapToken != "" &&
+		c.GetHeader("X-Bootstrap-Token") == h.bootstrapToken {
+		return true
+	}
+
+	return userCount == 0
 }

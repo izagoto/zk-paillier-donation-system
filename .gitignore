@@ -52,3 +52,4 @@ blockchain/typechain-types/
 
 # Editor / agent
 .cursor/
+.kilo/

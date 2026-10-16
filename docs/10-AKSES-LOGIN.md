@@ -1,75 +1,172 @@
-# Akses dan Login
+# Akses, Role, dan Login
 
-Dokumen ini menjelaskan **siapa boleh mengakses apa** pada prototipe **TrustGive** (frontend + API).
+## Role yang diimplementasikan
 
-## Ringkasan
-
-| Peran | Login? | Akses di aplikasi web |
+| Role (`users.role`) | Label | Izin API / aplikasi |
 |---|---|---|
-| **Pengunjung** | Tidak | Beranda, daftar campaign, detail campaign (baca saja) |
-| **Pengguna terdaftar** | Ya (JWT) | Semua akses pengunjung + buat campaign, donasi, generate proof |
-| **Publik internet** | — | Tidak ada; hanya lingkungan demo lokal/penelitian |
+| **`donor`** | Donatur | Login; **donasi** (`generate-proof`, `POST /donations`). Tidak bisa buat campaign. |
+| **`organizer`** | Pengelola campaign | Login; **buat campaign** (`POST /campaigns`). Tidak bisa donasi. |
+| **`auditor`** | Auditor | Login; **hanya baca** (sama seperti pengunjung + profil). Tidak donasi / tidak buat campaign. |
+| **`admin`** | Administrator | Semua izin donatur dan pengelola; **membuat user** via `POST /api/auth/register`. |
 
-Tidak ada halaman **Daftar** di UI. Akun hanya dibuat oleh **pengelola penelitian** melalui API bootstrap (lihat bawah).
+Pengunjung **tanpa login** dapat `GET` campaign, donasi, dan agregat (transparansi demo).
 
-## Siapa yang bisa login?
+Enforcement: middleware `RequireRole` di backend + penyesuaian menu di frontend TrustGive.
 
-Setiap baris di tabel `users` (PostgreSQL) dengan email dan password yang valid **boleh login** lewat:
+## Flow penggunaan (demo sidang)
 
-- Frontend: `http://localhost:5173/login`
-- API: `POST /api/auth/login` → JWT `access_token`
+```mermaid
+flowchart TB
+  subgraph setup [Setup sekali]
+    E[source backend/.env] --> B[POST /api/auth/register + BOOTSTRAP_TOKEN]
+    B --> C[organizer + donor]
+  end
 
-Saat ini semua akun baru dari `POST /api/auth/register` mendapat **role `donor`** di database. Peran itu **belum** membedakan izin di API (pengelola campaign dan donatur memakai endpoint yang sama setelah login).
+  subgraph web [TrustGive Web]
+    V[Pengunjung: lihat campaign]
+    L[Login]
+    O[Pengelola: buat campaign]
+    D[Donatur: donasi + ZK + chain]
+  end
 
-**Siapa yang tidak bisa login:** email yang belum pernah didaftarkan ke database.
+  C --> L
+  L --> O
+  L --> D
+  V --> L
+```
 
-## Membuat akun (bootstrap, bukan fitur publik)
+### Skenario dua akun (disarankan)
 
-Hanya untuk setup demo/penelitian. Backend harus berjalan (`go run ./cmd/server`).
+1. **`pengelola@demo.local`** — role `organizer` → buat campaign.
+2. **`donatur@demo.local`** — role `donor` → donasi.
+3. Logout antara kedua peran agar JWT dan menu UI sesuai role.
+
+## Membuat akun
+
+Registrasi **tidak ada di UI**. Gunakan API.
+
+### Persiapan shell
 
 ```bash
-# Akun pengelola / donatur demo 1
+cd backend
+set -a && source .env && set +a
+export BOOTSTRAP_TOKEN="$BOOTSTRAP_TOKEN"
+```
+
+Nilai `BOOTSTRAP_TOKEN` harus **sama** dengan di `backend/.env`. Jangan menulis literal `<token Anda>` di header.
+
+### A. Database masih kosong (user pertama)
+
+User pertama menjadi **`admin`** jika `role` tidak diisi:
+
+```bash
 curl -s -X POST http://127.0.0.1:8080/api/auth/register \
   -H "Content-Type: application/json" \
-  -d '{"email":"pengelola@demo.local","password":"demo12345"}'
+  -d '{"email":"admin@demo.local","password":"demo12345"}'
+```
 
-# Akun donatur demo 2 (opsional, skenario dua pengguna)
+### B. Bootstrap token (disarankan untuk demo)
+
+Jalankan **satu per satu** (dua baris curl terpisah):
+
+```bash
 curl -s -X POST http://127.0.0.1:8080/api/auth/register \
+  -H "Content-Type: application/json" \
+  -H "X-Bootstrap-Token: $BOOTSTRAP_TOKEN" \
+  -d '{"email":"pengelola@demo.local","password":"demo12345","role":"organizer"}'
+
+curl -s -X POST http://127.0.0.1:8080/api/auth/register \
+  -H "Content-Type: application/json" \
+  -H "X-Bootstrap-Token: $BOOTSTRAP_TOKEN" \
+  -d '{"email":"donatur@demo.local","password":"demo12345","role":"donor"}'
+```
+
+Opsional auditor:
+
+```bash
+curl -s -X POST http://127.0.0.1:8080/api/auth/register \
+  -H "Content-Type: application/json" \
+  -H "X-Bootstrap-Token: $BOOTSTRAP_TOKEN" \
+  -d '{"email":"auditor@demo.local","password":"demo12345","role":"auditor"}'
+```
+
+Respons sukses contoh: `{"id":"...","email":"...","role":"donor"}`.
+
+### C. Admin yang sudah login
+
+```bash
+TOKEN="<access_token dari POST /api/auth/login admin>"
+
+curl -s -X POST http://127.0.0.1:8080/api/auth/register \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{"email":"donatur2@demo.local","password":"demo12345","role":"donor"}'
+```
+
+## Login
+
+### Antarmuka web (TrustGive)
+
+- URL: http://localhost:5173/login  
+- **Tidak ada** tautan atau halaman registrasi; kredensial hanya dari bootstrap API (lihat atas).
+- Setelah login, menu menyesuaikan role: **Buat Campaign** hanya untuk `organizer` / `admin`; donasi hanya untuk `donor` / `admin`.
+- Pengunjung tanpa login tetap dapat membuka beranda dan daftar campaign.
+
+### API
+
+- API:
+
+```bash
+curl -s -X POST http://127.0.0.1:8080/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"donatur@demo.local","password":"demo12345"}'
 ```
 
-Respons sukses: `201` dengan `id`, `email`, `role`. Jika email sudah ada: `409`.
+- Profil: `GET /api/auth/me` dengan header `Authorization: Bearer <token>`
 
-**Disarankan untuk sidang/demo:** buat minimal satu akun sebelum membuka UI; gunakan kredensial di atas atau sesuaikan email/password (min. 8 karakter untuk password di UI).
+**Penting:** Role ada di JWT saat login. Jika role diubah di database, **logout dan login lagi**.
 
-## Endpoint autentikasi
+## Cek dan perbaiki role di database
 
-| Metode | Path | Siapa | Keterangan |
-|---|---|---|---|
-| POST | `/api/auth/register` | Pengelola (curl/Postman) | Bootstrap akun; **tidak** ditampilkan di web |
-| POST | `/api/auth/login` | Semua pengguna terdaftar | Mengembalikan JWT |
-| GET | `/api/auth/me` | Bearer JWT | Profil user saat ini |
+Selalu pakai `DATABASE_URL` dari `backend/.env`:
 
-Header untuk request terproteksi:
+```bash
+cd backend && set -a && source .env && set +a
 
-```http
-Authorization: Bearer <access_token>
+psql "$DATABASE_URL" -c "SELECT email, role FROM users ORDER BY email;"
 ```
 
-## Fitur yang membutuhkan login
+Jika `pengelola@demo.local` masih `donor` (akun dibuat sebelum RBAC):
 
-| Fitur | Login wajib? |
-|---|---|
-| Lihat daftar/detail campaign | Tidak |
-| Buat campaign | Ya |
-| Generate proof + kirim donasi | Ya |
-| Lihat profil (`/api/auth/me`) | Ya |
+```bash
+psql "$DATABASE_URL" -c \
+  "UPDATE users SET role = 'organizer' WHERE email = 'pengelola@demo.local';"
+```
 
-## Keamanan (demo)
+## Matriks endpoint (ringkas)
 
-- JWT secret dari `JWT_SECRET` di `backend/.env` — jangan commit.
-- Endpoint `register` terbuka di API demo; **jangan** diekspos ke internet tanpa proteksi.
-- Untuk produksi: nonaktifkan `register`, gunakan provisioning terpusat, rate limiting, dan HTTPS.
+| Endpoint | Publik | donor | organizer | auditor | admin |
+|---|---|---|---|---|---|
+| GET campaigns / aggregate / donations | ✅ | ✅ | ✅ | ✅ | ✅ |
+| POST /campaigns | ❌ | ❌ | ✅ | ❌ | ✅ |
+| POST /donations, generate-proof | ❌ | ✅ | ❌ | ❌ | ✅ |
+| POST /auth/register | bootstrap / user pertama / admin | ❌ | ❌ | ❌ | ✅ |
 
-Lihat juga [08-KEAMANAN.md](08-KEAMANAN.md) dan [LOCAL-SETUP.md](LOCAL-SETUP.md).
+## Troubleshooting singkat
+
+| Gejala | Penyebab umum | Solusi |
+|---|---|---|
+| `email already exists` | Email sudah di DB | Login atau email lain |
+| `forbidden` pada register | Token bootstrap salah / DB sudah terisi | Perbaiki `BOOTSTRAP_TOKEN` atau login sebagai admin |
+| Menu Buat Campaign tidak muncul | JWT role masih `donor` | `UPDATE role` + logout/login |
+| `psql` database "zagoto" | `DATABASE_URL` tidak di-export | `source backend/.env` |
+| `role zkdonation does not exist` | URL Docker dipakai di Postgres lokal | Sesuaikan `DATABASE_URL` di `.env` |
+
+Detail: [11-LOCAL-SETUP.md](11-LOCAL-SETUP.md).
+
+## Catatan keamanan demo
+
+- Set `BOOTSTRAP_TOKEN` kuat jika API bisa diakses dari luar localhost.
+- Role **`auditor`** belum punya dashboard khusus; hak baca mengikuti endpoint publik.
+
+Lihat [08-KEAMANAN.md](08-KEAMANAN.md).

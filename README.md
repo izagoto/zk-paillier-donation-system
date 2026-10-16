@@ -8,37 +8,30 @@
 
 ## Gambaran singkat
 
-Pencatatan donasi yang dapat diverifikasi on-chain, enkripsi nominal dengan Paillier, agregasi homomorfik, dan validasi batas donasi dengan Groth16. Antarmuka web **TrustGive** (`frontend/`) mendukung alur demo lengkap tanpa API client manual.
+Pencatatan donasi yang dapat diverifikasi on-chain, enkripsi nominal dengan Paillier, agregasi homomorfik, dan validasi batas donasi dengan Groth16. Antarmuka web **TrustGive** (`frontend/`, React + Vite) mendukung alur demo lengkap tanpa API client manual: beranda, campaign, login (tanpa halaman daftar), RBAC di menu, dan form donasi.
 
-## Akses dan login
+## Akses dan role
 
-| Pengguna | Perlu login? | Yang bisa dilakukan |
+| Role | Login | Kemampuan utama |
 |---|---|---|
-| **Pengunjung** | Tidak | Lihat beranda, daftar campaign, detail campaign |
-| **Akun terdaftar** | Ya | Buat campaign, donasi (ZK + blockchain), lihat riwayat & agregat |
+| Pengunjung | Tidak | Lihat campaign & agregat |
+| **donor** | Ya | Donasi (ZK + blockchain) |
+| **organizer** | Ya | Buat campaign |
+| **auditor** | Ya | Baca data (profil + endpoint publik) |
+| **admin** | Ya | Donasi + campaign + buat user |
 
-- **Tidak ada registrasi di website** — hanya halaman **Masuk**.
-- Akun dibuat sekali oleh pengelola penelitian via API (`POST /api/auth/register`), misalnya:
-
-```bash
-curl -s -X POST http://127.0.0.1:8080/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"email":"pengelola@demo.local","password":"demo12345"}'
-```
-
-Lalu login di `http://localhost:5173/login` dengan email/password tersebut.
-
-Penjelasan lengkap: **[docs/10-AKSES-LOGIN.md](docs/10-AKSES-LOGIN.md)**.
+Tidak ada **Daftar** di website. Akun dibuat via `POST /api/auth/register` (bootstrap token atau admin).  
+Flow lengkap: **[docs/10-AKSES-LOGIN.md](docs/10-AKSES-LOGIN.md)**.
 
 ## Menjalankan demo (singkat)
 
-1. PostgreSQL + migrasi (`docker compose up -d postgres`, `migrate ... up`)
-2. `npx hardhat node` + deploy kontrak → isi `BLOCKCHAIN_CONTRACT_ADDRESS` di `backend/.env`
+1. PostgreSQL — set `DATABASE_URL` di `backend/.env`, lalu migrasi (`source .env` → `migrate ... up`)
+2. `npx hardhat node` + deploy kontrak → `BLOCKCHAIN_CONTRACT_ADDRESS` di `.env`
 3. `cd backend && go run ./cmd/server`
-4. Buat akun demo (curl di atas)
-5. `cd frontend && npm run dev` → buka http://localhost:5173
+4. Buat akun `organizer` + `donor` via `POST /api/auth/register` + `X-Bootstrap-Token` (lihat docs)
+5. `cd frontend && npm run dev` → http://localhost:5173
 
-Detail: **[docs/LOCAL-SETUP.md](docs/LOCAL-SETUP.md)**.
+**Troubleshooting** (`email already exists`, role pengelola, `psql`, npm audit): **[docs/11-LOCAL-SETUP.md](docs/11-LOCAL-SETUP.md)**.
 
 ## Fitur yang sudah diuji
 
@@ -89,7 +82,7 @@ flowchart TD
 | [Teknologi](docs/07-TEKNOLOGI.md) | Stack |
 | [Keamanan](docs/08-KEAMANAN.md) | Threat model |
 | [Roadmap](docs/09-ROADMAP.md) | Tahapan pengembangan |
-| [Setup lokal](docs/LOCAL-SETUP.md) | Menjalankan semua komponen |
+| [Setup lokal](docs/11-LOCAL-SETUP.md) | Menjalankan semua komponen |
 | [**Akses & login**](docs/10-AKSES-LOGIN.md) | Siapa login, bootstrap akun |
 
 ## Keamanan

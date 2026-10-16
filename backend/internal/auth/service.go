@@ -26,10 +26,15 @@ func NewService(repository *UserRepository) *Service {
 	}
 }
 
+func (s *Service) CountUsers(ctx context.Context) (int64, error) {
+	return s.repository.Count(ctx)
+}
+
 func (s *Service) Register(
 	ctx context.Context,
 	email string,
 	password string,
+	role string,
 ) (*User, error) {
 	email = strings.TrimSpace(strings.ToLower(email))
 
@@ -41,7 +46,12 @@ func (s *Service) Register(
 		return nil, ErrPasswordRequired
 	}
 
-	_, err := s.repository.FindByEmail(ctx, email)
+	normalizedRole, err := NormalizeRole(role)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = s.repository.FindByEmail(ctx, email)
 	if err == nil {
 		return nil, ErrEmailExists
 	}
@@ -59,7 +69,7 @@ func (s *Service) Register(
 		ctx,
 		email,
 		passwordHash,
-		"donor",
+		normalizedRole,
 	)
 }
 

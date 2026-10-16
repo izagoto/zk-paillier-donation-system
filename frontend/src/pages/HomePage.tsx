@@ -4,6 +4,7 @@ import { apiRequest, type Campaign } from '../api/client';
 import { CampaignCard } from '../components/CampaignCard';
 import { Spinner } from '../components/ui/Spinner';
 import { useAuth } from '../context/AuthContext';
+import { canCreateCampaign } from '../lib/roles';
 
 export function HomePage() {
   const { user } = useAuth();
@@ -36,15 +37,15 @@ export function HomePage() {
             <Link to="/campaigns" className="link-btn link-btn--primary link-btn--lg">
               Jelajahi campaign
             </Link>
-            {user ? (
+            {user && canCreateCampaign(user.role) ? (
               <Link to="/campaigns/new" className="link-btn link-btn--ghost link-btn--lg">
                 Buat campaign baru
               </Link>
-            ) : (
+            ) : !user ? (
               <Link to="/login" className="link-btn link-btn--ghost link-btn--lg">
-                Masuk untuk berdonasi
+                Masuk
               </Link>
-            )}
+            ) : null}
           </div>
           <dl className="hero__stats">
             <div>

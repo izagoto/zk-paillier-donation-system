@@ -26,11 +26,13 @@ Cakupan: auth, campaign, Paillier, circuit dan Groth16, smart contract, API dona
 
 **Status:** MVP selesai untuk demo lokal.
 
-- [x] Login dan registrasi.
+- [x] Login dan RBAC role (donor, organizer, auditor, admin).
+- [x] Tanpa registrasi di UI; halaman login terpisah dari layout utama.
 - [x] Daftar/detail campaign.
 - [x] Form donasi (generate proof via API + submit).
 - [x] Status transaksi dan riwayat donasi.
 - [x] Ringkasan aggregate (termasuk dekripsi demo di backend).
+- [x] UI TrustGive konsisten (tipografi, warna, komponen form/tombol).
 
 **Exit criteria:** pengguna menyelesaikan happy path tanpa terminal/API client.
 
@@ -57,4 +59,4 @@ Cakupan: auth, campaign, Paillier, circuit dan Groth16, smart contract, API dona
 
 ## Next step langsung
 
-Verifikasi tabel `donations_duplicate_archive` pada database version 5, lalu susun rencana reconciliation yang tidak mengubah confirmed history berdasarkan asumsi. Setelah itu kerjakan idempotency dan transaksi yang dapat dipulihkan.
+Verifikasi tabel `donations_duplicate_archive` pada database version 5, lalu susun rencana reconciliation yang tidak mengubah confirmed history berdasarkan asumsi. Lanjutkan state machine donasi, retry/recovery blockchain, dan uji concurrency (idempotency key migration **000006** sudah ada).

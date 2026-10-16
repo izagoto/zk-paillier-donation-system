@@ -11,7 +11,7 @@ Membangun prototipe donasi yang **dapat diaudit**, **mendukung agregasi terenkri
 | G-03 | Validasi zk-SNARK | Proof valid diterima, invalid ditolak | Dasar diuji |
 | G-04 | Anti-replay | Retry tidak menciptakan logical donation kedua | Sedang dikerjakan |
 | G-05 | Keandalan | Pemulihan dan rekonsiliasi dapat diuji pada kegagalan | Belum selesai |
-| G-06 | Usabilitas | Happy path tersedia melalui frontend | Direncanakan |
+| G-06 | Usabilitas | Happy path tersedia melalui frontend | MVP TrustGive |
 | G-07 | Privasi yang lebih kuat | Bukti mengikat ciphertext ke witness; threat model terpenuhi | Riset lanjutan |
 | G-08 | Evaluasi ilmiah | Benchmark dan hasil pengujian dapat direproduksi | Direncanakan |
 

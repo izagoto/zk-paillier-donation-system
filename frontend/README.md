@@ -1,32 +1,24 @@
-# React + TypeScript + Vite
+# TrustGive (frontend)
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Antarmuka web prototipe **zk-paillier-donation-system**: React 19, TypeScript, Vite.
 
-Currently, two official plugins are available:
+## Menjalankan
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm install
+npm run dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Default: http://localhost:5173 — API backend di `http://127.0.0.1:8080` (proxy Vite).
+
+## Dokumentasi proyek
+
+- Setup lengkap: [../docs/11-LOCAL-SETUP.md](../docs/11-LOCAL-SETUP.md)
+- Login, role, bootstrap akun: [../docs/10-AKSES-LOGIN.md](../docs/10-AKSES-LOGIN.md)
+- Alur demo: [../docs/05-WORKFLOW.md](../docs/05-WORKFLOW.md)
+
+## Catatan
+
+- Registrasi **hanya** lewat API backend, bukan dari UI.
+- RBAC UI: `src/lib/roles.ts` (selaras middleware backend).
+- Generate proof donasi memanggil backend (demo penelitian).

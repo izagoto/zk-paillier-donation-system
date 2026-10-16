@@ -6,19 +6,13 @@ Struktur di bawah adalah **pemetaan komponen yang diketahui dan struktur dokumen
 zk-paillier-donation-system/
 ├── README.md
 ├── frontend/
-│   └── ...          # TrustGive (React/Vite)
+│   ├── src/pages/       # Home, Campaign, Login, Create, Detail
+│   ├── src/components/  # Layout, AuthLayout, CampaignCard, UI
+│   └── src/lib/roles.ts # RBAC di UI (selaras backend)
 ├── docs/
-│   ├── PRD.md
-│   ├── PENELITIAN.md
-│   ├── GOALS.md
-│   ├── ARSITEKTUR.md
-│   ├── PERANCANGAN-SISTEM.md
-│   ├── WORKFLOW.md
-│   ├── STRUKTUR-PROYEK.md
-│   ├── TEKNOLOGI.md
-│   ├── KEAMANAN.md
+│   ├── 01-PRD.md … 11-LOCAL-SETUP.md
 │   ├── 10-AKSES-LOGIN.md
-│   └── LOCAL-SETUP.md
+│   └── 11-LOCAL-SETUP.md
 ├── backend/
 │   ├── cmd/
 │   │   ├── server/main.go
@@ -35,7 +29,8 @@ zk-paillier-donation-system/
 │   │   ├── 000002_create_campaigns.*.sql
 │   │   ├── 000003_create_donations.*.sql
 │   │   ├── 000004_create_campaign_aggregates.*.sql
-│   │   └── 000005_add_donation_duplicate_archive.*.sql
+│   │   ├── 000005_add_donation_duplicate_archive.*.sql
+│   │   └── 000006_*_idempotency*.sql
 │   └── ...
 ├── blockchain/
 │   └── ...

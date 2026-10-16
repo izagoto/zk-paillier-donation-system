@@ -1,5 +1,6 @@
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { canCreateCampaign, roleLabel } from '../lib/roles';
 import { Button } from './ui/Button';
 
 export function Layout() {
@@ -25,7 +26,7 @@ export function Layout() {
             <NavLink to="/campaigns" className="nav__link">
               Campaign
             </NavLink>
-            {user ? (
+            {user && canCreateCampaign(user.role) ? (
               <NavLink to="/campaigns/new" className="nav__link">
                 Buat Campaign
               </NavLink>
@@ -39,7 +40,10 @@ export function Layout() {
                   <span className="user-chip__avatar" aria-hidden>
                     {user.email.charAt(0).toUpperCase()}
                   </span>
-                  <span className="user-chip__email">{user.email}</span>
+                  <span className="user-chip__email">
+                    {user.email}
+                    <span className="user-chip__role">{roleLabel(user.role)}</span>
+                  </span>
                 </div>
                 <Button
                   variant="ghost"

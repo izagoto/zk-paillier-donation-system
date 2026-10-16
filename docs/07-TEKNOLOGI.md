@@ -16,6 +16,8 @@
 | Hardhat | Blockchain lokal | Deployment dan pengujian; chain dapat reset |
 | Ethereum JSON-RPC | Integrasi backend–chain | Mengirim dan memeriksa transaksi |
 | Git/GitHub | Version control | Kolaborasi dan riwayat perubahan |
+| React + Vite | Frontend TrustGive | SPA demo: campaign, donasi, login, RBAC UI |
+| React Router | Navigasi frontend | Route publik vs login; guard organizer |
 
 ## Integrasi teknologi
 
@@ -30,4 +32,4 @@
 
 ## Teknologi yang masih diputuskan
 
-Frontend framework, strategi queue/job worker, key management produksi, observability stack, dan infrastruktur staging belum dipastikan. Pilih berdasarkan kebutuhan, bukan menambahkan stack hanya untuk memperbanyak teknologi.
+Strategi queue/job worker, key management produksi, observability stack, dan infrastruktur staging belum dipastikan. Frontend MVP sudah memakai React/Vite; peningkatan berikutnya (mis. prover di browser, dashboard auditor) mengikuti roadmap.

@@ -18,6 +18,7 @@ import (
 func Setup(
 	db *pgxpool.Pool,
 	jwtSecret string,
+	bootstrapToken string,
 	paillierPublicKey *paillier.PublicKey,
 	paillierPrivateKey *paillier.PrivateKey,
 	zkVerifier *zk.Verifier,
@@ -45,6 +46,7 @@ func Setup(
 	authHandler := auth.NewHandler(
 		authService,
 		jwtManager,
+		bootstrapToken,
 	)
 
 	campaignRepository := campaign.NewRepository(db)
@@ -72,7 +74,11 @@ func Setup(
 	{
 		authRoutes := api.Group("/auth")
 		{
-			authRoutes.POST("/register", authHandler.Register)
+			authRoutes.POST(
+				"/register",
+				auth.OptionalAuthMiddleware(jwtManager),
+				authHandler.Register,
+			)
 			authRoutes.POST("/login", authHandler.Login)
 
 			protected := authRoutes.Group("")
@@ -96,7 +102,10 @@ func Setup(
 			campaignRoutes.GET("/:id", campaignHandler.FindByID)
 
 			protectedCampaignRoutes := campaignRoutes.Group("")
-			protectedCampaignRoutes.Use(auth.AuthMiddleware(jwtManager))
+			protectedCampaignRoutes.Use(
+				auth.AuthMiddleware(jwtManager),
+				auth.RequireRole(auth.RoleOrganizer, auth.RoleAdmin),
+			)
 			{
 				protectedCampaignRoutes.POST("", campaignHandler.Create)
 			}
@@ -107,7 +116,10 @@ func Setup(
 			donationRoutes.GET("/:id", donationHandler.FindByID)
 
 			protectedDonationRoutes := donationRoutes.Group("")
-			protectedDonationRoutes.Use(auth.AuthMiddleware(jwtManager))
+			protectedDonationRoutes.Use(
+				auth.AuthMiddleware(jwtManager),
+				auth.RequireRole(auth.RoleDonor, auth.RoleAdmin),
+			)
 			{
 				protectedDonationRoutes.POST("", donationHandler.Create)
 				protectedDonationRoutes.POST(

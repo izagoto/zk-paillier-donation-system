@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"errors"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -33,6 +34,15 @@ func (m *JWTManager) GenerateToken(user *User) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
 	return token.SignedString([]byte(m.secret))
+}
+
+func ParseRole(claims jwt.MapClaims) (string, error) {
+	value, ok := claims["role"].(string)
+	if !ok || value == "" {
+		return "", errors.New("role claim missing")
+	}
+
+	return value, nil
 }
 
 func ParseUserID(claims jwt.MapClaims) (uuid.UUID, error) {

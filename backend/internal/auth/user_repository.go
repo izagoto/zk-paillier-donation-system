@@ -111,3 +111,17 @@ func (r *UserRepository) FindByID(
 
 	return user, nil
 }
+
+func (r *UserRepository) Count(ctx context.Context) (int64, error) {
+	var count int64
+
+	err := r.db.QueryRow(
+		ctx,
+		`SELECT COUNT(*) FROM users`,
+	).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
+}

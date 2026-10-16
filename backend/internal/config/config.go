@@ -16,6 +16,7 @@ type Config struct {
 	BlockchainRPCURL     string
 	BlockchainContract   string
 	BlockchainPrivateKey string
+	BootstrapToken       string
 }
 
 func Load() (*Config, error) {
@@ -35,5 +36,6 @@ func Load() (*Config, error) {
 		BlockchainRPCURL:     os.Getenv("BLOCKCHAIN_RPC_URL"),
 		BlockchainContract:   os.Getenv("BLOCKCHAIN_CONTRACT_ADDRESS"),
 		BlockchainPrivateKey: os.Getenv("BLOCKCHAIN_PRIVATE_KEY"),
+		BootstrapToken:       os.Getenv("BOOTSTRAP_TOKEN"),
 	}, nil
 }
