@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/izagoto/zk-paillier-donation-system/internal/blockchain"
 )
 
 var (
@@ -18,12 +19,20 @@ var (
 )
 
 type Service struct {
-	repository *Repository
+	repository         *Repository
+	blockchainRegistry *blockchain.Registry
+	blockchainSigner   *blockchain.Signer
 }
 
-func NewService(repository *Repository) *Service {
+func NewService(
+	repository *Repository,
+	blockchainRegistry *blockchain.Registry,
+	blockchainSigner *blockchain.Signer,
+) *Service {
 	return &Service{
-		repository: repository,
+		repository:         repository,
+		blockchainRegistry: blockchainRegistry,
+		blockchainSigner:   blockchainSigner,
 	}
 }
 
@@ -64,8 +73,21 @@ func (s *Service) Create(
 		return nil, ErrMaxDonationExceedsTarget
 	}
 
+	campaignID := uuid.New()
+
+	_, err := s.blockchainRegistry.SetCampaignMaxDonation(
+		ctx,
+		s.blockchainSigner,
+		campaignID.String(),
+		maxDonation,
+	)
+	if err != nil {
+		return nil, err
+	}
+
 	return s.repository.Create(
 		ctx,
+		campaignID,
 		title,
 		description,
 		targetAmount,

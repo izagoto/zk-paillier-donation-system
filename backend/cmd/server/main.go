@@ -36,6 +36,13 @@ func main() {
 
 	log.Println("ZK verifier loaded")
 
+	zkProver, err := zk.NewProver()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	log.Println("ZK prover loaded")
+
 	blockchainClient, err := blockchain.NewClient(cfg.BlockchainRPCURL)
 	if err != nil {
 		log.Fatal(err)
@@ -94,7 +101,9 @@ func main() {
 		db,
 		cfg.JWTSecret,
 		paillierKeyManager.PublicKey,
+		paillierKeyManager.PrivateKey,
 		zkVerifier,
+		zkProver,
 		blockchainRegistry,
 		blockchainSigner,
 	)

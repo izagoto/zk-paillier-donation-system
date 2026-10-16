@@ -2,12 +2,24 @@ package blockchain
 
 import (
 	"context"
+	"encoding/json"
 	"math/big"
+	"os"
+	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 )
+
+type transactionTestZKProof struct {
+	PiA      []string   `json:"pi_a"`
+	PiB      [][]string `json:"pi_b"`
+	PiC      []string   `json:"pi_c"`
+	Protocol string     `json:"protocol"`
+	Curve    string     `json:"curve"`
+}
 
 func TestBuildSignedTransaction(t *testing.T) {
 	client, err := NewClient("http://127.0.0.1:8545")
@@ -25,34 +37,245 @@ func TestBuildSignedTransaction(t *testing.T) {
 	}
 
 	to := common.HexToAddress(
-		"0x5FbDB2315678afecb367f032d93F642f64180aa3",
+		"0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
 	)
 
 	contract, err := LoadContract(
-		"0x5FbDB2315678afecb367f032d93F642f64180aa3",
+		"0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
 		"abi/DonationRegistry.json",
 	)
 	if err != nil {
 		t.Fatalf("failed to load contract: %v", err)
 	}
 
+	// Resolve project root from this test file:
+	// backend/internal/blockchain/transaction_test.go
+	_, currentFile, _, ok := runtime.Caller(0)
+	if !ok {
+		t.Fatal("failed to determine current test file path")
+	}
+
+	backendDir := filepath.Join(
+		filepath.Dir(currentFile),
+		"..",
+		"..",
+	)
+
+	projectDir := filepath.Join(
+		backendDir,
+		"..",
+	)
+
+	proofPath := filepath.Join(
+		projectDir,
+		"zk",
+		"build",
+		"donation-proof.json",
+	)
+
+	publicPath := filepath.Join(
+		projectDir,
+		"zk",
+		"build",
+		"donation-public.json",
+	)
+
+	proofData, err := os.ReadFile(proofPath)
+	if err != nil {
+		t.Fatalf(
+			"failed to read ZK proof: %v",
+			err,
+		)
+	}
+
+	publicData, err := os.ReadFile(publicPath)
+	if err != nil {
+		t.Fatalf(
+			"failed to read ZK public inputs: %v",
+			err,
+		)
+	}
+
+	var proof transactionTestZKProof
+
+	if err := json.Unmarshal(proofData, &proof); err != nil {
+		t.Fatalf(
+			"failed to parse ZK proof: %v",
+			err,
+		)
+	}
+
+	var publicSignals []string
+
+	if err := json.Unmarshal(
+		publicData,
+		&publicSignals,
+	); err != nil {
+		t.Fatalf(
+			"failed to parse ZK public inputs: %v",
+			err,
+		)
+	}
+
+	if len(publicSignals) != 2 {
+		t.Fatalf(
+			"expected 2 public signals, got %d",
+			len(publicSignals),
+		)
+	}
+
+	// Public signals:
+	//
+	// [0] campaign_max
+	// [1] commitment
+
+	campaignMax, ok := new(big.Int).SetString(
+		publicSignals[0],
+		10,
+	)
+	if !ok {
+		t.Fatal("invalid campaign_max public signal")
+	}
+
+	commitmentInt, ok := new(big.Int).SetString(
+		publicSignals[1],
+		10,
+	)
+	if !ok {
+		t.Fatal("invalid commitment public signal")
+	}
+
+	commitment := common.BytesToHash(
+		commitmentInt.Bytes(),
+	)
+
+	if len(proof.PiA) < 2 {
+		t.Fatal("invalid proof: pi_a")
+	}
+
+	if len(proof.PiB) < 2 ||
+		len(proof.PiB[0]) < 2 ||
+		len(proof.PiB[1]) < 2 {
+		t.Fatal("invalid proof: pi_b")
+	}
+
+	if len(proof.PiC) < 2 {
+		t.Fatal("invalid proof: pi_c")
+	}
+
+	pA0, ok := new(big.Int).SetString(
+		proof.PiA[0],
+		10,
+	)
+	if !ok {
+		t.Fatal("invalid proof: pi_a[0]")
+	}
+
+	pA1, ok := new(big.Int).SetString(
+		proof.PiA[1],
+		10,
+	)
+	if !ok {
+		t.Fatal("invalid proof: pi_a[1]")
+	}
+
+	pB00, ok := new(big.Int).SetString(
+		proof.PiB[0][1],
+		10,
+	)
+	if !ok {
+		t.Fatal("invalid proof: pi_b[0][1]")
+	}
+
+	pB01, ok := new(big.Int).SetString(
+		proof.PiB[0][0],
+		10,
+	)
+	if !ok {
+		t.Fatal("invalid proof: pi_b[0][0]")
+	}
+
+	pB10, ok := new(big.Int).SetString(
+		proof.PiB[1][1],
+		10,
+	)
+	if !ok {
+		t.Fatal("invalid proof: pi_b[1][1]")
+	}
+
+	pB11, ok := new(big.Int).SetString(
+		proof.PiB[1][0],
+		10,
+	)
+	if !ok {
+		t.Fatal("invalid proof: pi_b[1][0]")
+	}
+
+	pC0, ok := new(big.Int).SetString(
+		proof.PiC[0],
+		10,
+	)
+	if !ok {
+		t.Fatal("invalid proof: pi_c[0]")
+	}
+
+	pC1, ok := new(big.Int).SetString(
+		proof.PiC[1],
+		10,
+	)
+	if !ok {
+		t.Fatal("invalid proof: pi_c[1]")
+	}
+
+	pA := [2]*big.Int{
+		pA0,
+		pA1,
+	}
+
+	pB := [2][2]*big.Int{
+		{
+			pB00,
+			pB01,
+		},
+		{
+			pB10,
+			pB11,
+		},
+	}
+
+	pC := [2]*big.Int{
+		pC0,
+		pC1,
+	}
+
+	pubSignals := [2]*big.Int{
+		campaignMax,
+		commitmentInt,
+	}
+
 	campaignID := common.HexToHash(
 		"0x6f76b55b5fb7db5ae822c5f21fa38d28a97b75e8c85d78ce14967d5bfb6677ff",
 	)
 
-	commitment := common.HexToHash(
-		"0x27651149e7b9fb5f2864c59cba14652b7dcb4814b1113b9e7b6be726a1689138",
+	encryptedAmount := []byte(
+		"paillier-ciphertext-test",
 	)
 
 	data, err := contract.ABI.Pack(
 		"recordDonation",
 		campaignID,
 		commitment,
-		[]byte("paillier-ciphertext-test"),
-		[]byte("groth16-proof-test"),
+		encryptedAmount,
+		pA,
+		pB,
+		pC,
+		pubSignals,
 	)
 	if err != nil {
-		t.Fatalf("failed to pack recordDonation: %v", err)
+		t.Fatalf(
+			"failed to pack recordDonation: %v",
+			err,
+		)
 	}
 
 	tx, err := BuildSignedTransaction(
@@ -64,7 +287,10 @@ func TestBuildSignedTransaction(t *testing.T) {
 		big.NewInt(0),
 	)
 	if err != nil {
-		t.Fatalf("failed to build signed transaction: %v", err)
+		t.Fatalf(
+			"failed to build signed transaction: %v",
+			err,
+		)
 	}
 
 	if tx == nil {
@@ -98,7 +324,10 @@ func TestBuildSignedTransaction(t *testing.T) {
 
 	sender, err := types.Sender(signerFn, tx)
 	if err != nil {
-		t.Fatalf("failed to recover transaction sender: %v", err)
+		t.Fatalf(
+			"failed to recover transaction sender: %v",
+			err,
+		)
 	}
 
 	if sender != signer.Address {

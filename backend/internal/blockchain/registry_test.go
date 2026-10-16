@@ -2,6 +2,7 @@ package blockchain
 
 import (
 	"bytes"
+	"math/big"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -36,13 +37,41 @@ func TestPackRecordDonation(t *testing.T) {
 	)
 
 	encryptedAmount := []byte("paillier-ciphertext-test")
-	zkProof := []byte("groth16-proof-test")
+
+	pA := [2]*big.Int{
+		big.NewInt(1),
+		big.NewInt(2),
+	}
+
+	pB := [2][2]*big.Int{
+		{
+			big.NewInt(3),
+			big.NewInt(4),
+		},
+		{
+			big.NewInt(5),
+			big.NewInt(6),
+		},
+	}
+
+	pC := [2]*big.Int{
+		big.NewInt(7),
+		big.NewInt(8),
+	}
+
+	pubSignals := [2]*big.Int{
+		big.NewInt(5000000),
+		new(big.Int).Set(commitment.Big()),
+	}
 
 	data, err := registry.PackRecordDonation(
 		campaignID,
 		commitment,
 		encryptedAmount,
-		zkProof,
+		pA,
+		pB,
+		pC,
+		pubSignals,
 	)
 	if err != nil {
 		t.Fatalf("failed to pack recordDonation: %v", err)
@@ -55,6 +84,10 @@ func TestPackRecordDonation(t *testing.T) {
 	expectedMethodID := registry.Contract.ABI.Methods["recordDonation"].ID
 
 	if !bytes.Equal(data[:4], expectedMethodID) {
-		t.Fatalf("unexpected method selector: got %x, want %x", data[:4], expectedMethodID)
+		t.Fatalf(
+			"unexpected method selector: got %x, want %x",
+			data[:4],
+			expectedMethodID,
+		)
 	}
 }

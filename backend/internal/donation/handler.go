@@ -2,6 +2,7 @@ package donation
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -23,6 +24,33 @@ type createDonationRequest struct {
 	Amount     string   `json:"amount"`
 	Commitment string   `json:"commitment"`
 	Proof      zk.Proof `json:"proof"`
+}
+
+type generateProofRequest struct {
+	CampaignID string `json:"campaign_id"`
+	Amount     string `json:"amount"`
+}
+
+type donationResponse struct {
+	ID              uuid.UUID `json:"id"`
+	CampaignID      uuid.UUID `json:"campaign_id"`
+	Commitment      string    `json:"commitment"`
+	EncryptedAmount string    `json:"encrypted_amount"`
+	TxHash          string    `json:"tx_hash"`
+	Status          string    `json:"status"`
+	CreatedAt       string    `json:"created_at"`
+}
+
+func toDonationResponse(donation *Donation) donationResponse {
+	return donationResponse{
+		ID:              donation.ID,
+		CampaignID:      donation.CampaignID,
+		Commitment:      donation.Commitment,
+		EncryptedAmount: donation.EncryptedAmount,
+		TxHash:          donation.TxHash,
+		Status:          donation.Status,
+		CreatedAt:       donation.CreatedAt.Format(time.RFC3339),
+	}
 }
 
 func (h *Handler) Create(c *gin.Context) {
@@ -59,6 +87,14 @@ func (h *Handler) Create(c *gin.Context) {
 		return
 	}
 
+	idempotencyKey := c.GetHeader("Idempotency-Key")
+	if idempotencyKey == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": ErrIdempotencyKeyRequired.Error(),
+		})
+		return
+	}
+
 	donation, err := h.service.Create(
 		c.Request.Context(),
 		campaignID,
@@ -66,6 +102,7 @@ func (h *Handler) Create(c *gin.Context) {
 		request.Amount,
 		request.Commitment,
 		request.Proof,
+		idempotencyKey,
 	)
 	if err != nil {
 		switch err {
@@ -104,6 +141,11 @@ func (h *Handler) Create(c *gin.Context) {
 				"error": err.Error(),
 			})
 
+		case ErrIdempotencyKeyRequired:
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": err.Error(),
+			})
+
 		default:
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": "failed to create donation",
@@ -113,18 +155,61 @@ func (h *Handler) Create(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{
-		"id":               donation.ID,
-		"campaign_id":      donation.CampaignID,
-		"commitment":       donation.Commitment,
-		"encrypted_amount": donation.EncryptedAmount,
-		"status":           donation.Status,
-		"created_at":       donation.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+	c.JSON(http.StatusCreated, toDonationResponse(donation))
+}
+
+func (h *Handler) GenerateProof(c *gin.Context) {
+	var request generateProofRequest
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid request body",
+		})
+		return
+	}
+
+	campaignID, err := uuid.Parse(request.CampaignID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid campaign_id",
+		})
+		return
+	}
+
+	result, err := h.service.GenerateProof(
+		c.Request.Context(),
+		campaignID,
+		request.Amount,
+	)
+	if err != nil {
+		switch err {
+		case ErrAmountRequired, ErrInvalidAmount, ErrCampaignNotActive, ErrAmountExceedsMaximum:
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": err.Error(),
+			})
+		case ErrCampaignNotFound:
+			c.JSON(http.StatusNotFound, gin.H{
+				"error": err.Error(),
+			})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+		}
+
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"amount":       result.Amount,
+		"commitment":   result.Commitment,
+		"campaign_max": result.CampaignMax,
+		"proof":        result.Proof,
 	})
 }
 
-func (h *Handler) Confirm(c *gin.Context) {
-	donationID, err := uuid.Parse(c.Param("id"))
+func (h *Handler) FindByID(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "invalid donation id",
@@ -132,30 +217,75 @@ func (h *Handler) Confirm(c *gin.Context) {
 		return
 	}
 
-	if err := h.service.Confirm(
-		c.Request.Context(),
-		donationID,
-	); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "failed to confirm donation",
+	donation, err := h.service.FindByID(c.Request.Context(), id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "donation not found",
 		})
 		return
 	}
 
-	donation, err := h.service.FindByID(
+	c.JSON(http.StatusOK, toDonationResponse(donation))
+}
+
+func (h *Handler) FindByCampaignID(c *gin.Context) {
+	campaignID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid campaign_id",
+		})
+		return
+	}
+
+	donations, err := h.service.FindByCampaignID(
 		c.Request.Context(),
-		donationID,
+		campaignID,
 	)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "failed to get donation",
+			"error": "failed to load donations",
 		})
 		return
 	}
 
+	responses := make([]donationResponse, 0, len(donations))
+	for i := range donations {
+		responses = append(responses, toDonationResponse(&donations[i]))
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"id":          donation.ID,
-		"status":      donation.Status,
-		"campaign_id": donation.CampaignID,
+		"data": responses,
 	})
+}
+
+func (h *Handler) GetCampaignAggregate(c *gin.Context) {
+	campaignID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid campaign_id",
+		})
+		return
+	}
+
+	summary, err := h.service.GetAggregateSummary(
+		c.Request.Context(),
+		campaignID,
+	)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "failed to load aggregate",
+		})
+		return
+	}
+
+	response := gin.H{
+		"encrypted_total":  summary.EncryptedTotal,
+		"donation_count":   summary.DonationCount,
+	}
+
+	if summary.HasDecryptedTotal {
+		response["decrypted_total"] = summary.DecryptedTotal
+	}
+
+	c.JSON(http.StatusOK, response)
 }

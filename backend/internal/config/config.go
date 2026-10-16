@@ -19,9 +19,7 @@ type Config struct {
 }
 
 func Load() (*Config, error) {
-	if err := godotenv.Load(); err != nil {
-		return nil, err
-	}
+	_ = godotenv.Load()
 
 	keySize, err := strconv.Atoi(os.Getenv("PAILLIER_KEY_SIZE"))
 	if err != nil {

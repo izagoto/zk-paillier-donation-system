@@ -31,15 +31,14 @@ func NewRepository(db *pgxpool.Pool) *Repository {
 
 func (r *Repository) Create(
 	ctx context.Context,
+	id uuid.UUID,
 	title string,
 	description string,
 	targetAmount string,
 	maxDonation string,
 	createdBy uuid.UUID,
 ) (*Campaign, error) {
-	campaign := &Campaign{
-		ID: uuid.New(),
-	}
+	campaign := &Campaign{ID: id}
 
 	err := r.db.QueryRow(
 		ctx,

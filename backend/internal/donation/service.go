@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 
 	"github.com/izagoto/zk-paillier-donation-system/internal/blockchain"
 	"github.com/izagoto/zk-paillier-donation-system/internal/campaign"
@@ -24,13 +25,16 @@ var (
 	ErrCommitmentRequired    = errors.New("commitment is required")
 	ErrInvalidDonationStatus = errors.New("invalid donation status")
 	ErrInvalidZKProof        = errors.New("invalid zk proof")
+	ErrIdempotencyKeyRequired = errors.New("idempotency key is required")
 )
 
 type Service struct {
 	repository         *Repository
 	campaignRepository *campaign.Repository
 	paillierPublicKey  *paillier.PublicKey
+	paillierPrivateKey *paillier.PrivateKey
 	zkVerifier         *zk.Verifier
+	zkProver           *zk.Prover
 	blockchainRegistry *blockchain.Registry
 	blockchainSigner   *blockchain.Signer
 }
@@ -39,7 +43,9 @@ func NewService(
 	repository *Repository,
 	campaignRepository *campaign.Repository,
 	paillierPublicKey *paillier.PublicKey,
+	paillierPrivateKey *paillier.PrivateKey,
 	zkVerifier *zk.Verifier,
+	zkProver *zk.Prover,
 	blockchainRegistry *blockchain.Registry,
 	blockchainSigner *blockchain.Signer,
 ) *Service {
@@ -47,7 +53,9 @@ func NewService(
 		repository:         repository,
 		campaignRepository: campaignRepository,
 		paillierPublicKey:  paillierPublicKey,
+		paillierPrivateKey: paillierPrivateKey,
 		zkVerifier:         zkVerifier,
+		zkProver:           zkProver,
 		blockchainRegistry: blockchainRegistry,
 		blockchainSigner:   blockchainSigner,
 	}
@@ -60,9 +68,23 @@ func (s *Service) Create(
 	amount string,
 	providedCommitment string,
 	proof zk.Proof,
+	idempotencyKey string,
 ) (*Donation, error) {
 	amount = strings.TrimSpace(amount)
 	providedCommitment = strings.TrimSpace(providedCommitment)
+	idempotencyKey = strings.TrimSpace(idempotencyKey)
+
+	if idempotencyKey == "" {
+		return nil, ErrIdempotencyKeyRequired
+	}
+
+	existing, err := s.repository.FindByIdempotencyKey(
+		ctx,
+		idempotencyKey,
+	)
+	if err == nil && existing != nil {
+		return existing, nil
+	}
 
 	if amount == "" {
 		return nil, ErrAmountRequired
@@ -138,6 +160,7 @@ func (s *Service) Create(
 		providedCommitment,
 		encryptedAmount.String(),
 		string(proofJSON),
+		idempotencyKey,
 	)
 	if err != nil {
 		return nil, err
@@ -151,10 +174,9 @@ func (s *Service) Create(
 		return nil, errors.New("blockchain signer is not configured")
 	}
 
-	// Prepare the blockchain payload using the same
-	// ciphertext and ZK proof stored in the database.
 	payload := blockchain.NewDonationPayload(
 		campaignID.String(),
+		campaignData.MaxDonation,
 		providedCommitment,
 		encryptedAmount.String(),
 		string(proofJSON),
@@ -168,6 +190,7 @@ func (s *Service) Create(
 		payload,
 	)
 	if err != nil {
+		_ = s.repository.UpdateStatus(ctx, donation.ID, "failed")
 		return nil, err
 	}
 
@@ -204,6 +227,96 @@ func (s *Service) Create(
 	donation.Status = "confirmed"
 
 	return donation, nil
+}
+
+type AggregateSummary struct {
+	EncryptedTotal  string
+	DecryptedTotal  string
+	DonationCount   int
+	HasDecryptedTotal bool
+}
+
+func (s *Service) GetAggregateSummary(
+	ctx context.Context,
+	campaignID uuid.UUID,
+) (*AggregateSummary, error) {
+	encryptedTotal, err := s.repository.FindAggregate(ctx, campaignID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return &AggregateSummary{
+				EncryptedTotal: "0",
+				DonationCount:  0,
+			}, nil
+		}
+
+		return nil, err
+	}
+
+	donations, err := s.repository.FindConfirmedByCampaignID(ctx, campaignID)
+	if err != nil {
+		return nil, err
+	}
+
+	summary := &AggregateSummary{
+		EncryptedTotal: encryptedTotal,
+		DonationCount:  len(donations),
+	}
+
+	if s.paillierPrivateKey != nil && encryptedTotal != "" && encryptedTotal != "0" {
+		ciphertext, ok := new(big.Int).SetString(encryptedTotal, 10)
+		if !ok {
+			return nil, errors.New("invalid encrypted aggregate")
+		}
+
+		plaintext, err := s.paillierPrivateKey.Decrypt(ciphertext)
+		if err != nil {
+			return nil, err
+		}
+
+		summary.DecryptedTotal = plaintext.String()
+		summary.HasDecryptedTotal = true
+	}
+
+	return summary, nil
+}
+
+func (s *Service) GenerateProof(
+	ctx context.Context,
+	campaignID uuid.UUID,
+	amount string,
+) (*zk.GenerateResult, error) {
+	amount = strings.TrimSpace(amount)
+
+	if amount == "" {
+		return nil, ErrAmountRequired
+	}
+
+	if !isValidAmount(amount) {
+		return nil, ErrInvalidAmount
+	}
+
+	campaignData, err := s.campaignRepository.FindByID(ctx, campaignID)
+	if err != nil {
+		return nil, ErrCampaignNotFound
+	}
+
+	if campaignData.Status != "active" {
+		return nil, ErrCampaignNotActive
+	}
+
+	if compareAmount(amount, campaignData.MaxDonation) > 0 {
+		return nil, ErrAmountExceedsMaximum
+	}
+
+	if s.zkProver == nil {
+		return nil, errors.New("zk prover is not configured")
+	}
+
+	return s.zkProver.Generate(
+		ctx,
+		amount,
+		campaignData.MaxDonation,
+	)
 }
 
 func (s *Service) FindByID(
@@ -319,30 +432,6 @@ func (s *Service) Aggregate(
 		campaignID,
 		encryptedTotal.String(),
 	)
-}
-
-func (s *Service) Confirm(
-	ctx context.Context,
-	donationID uuid.UUID,
-) error {
-	donation, err := s.repository.FindByID(ctx, donationID)
-	if err != nil {
-		return err
-	}
-
-	if donation.Status != "pending" {
-		return ErrInvalidDonationStatus
-	}
-
-	if err := s.repository.UpdateStatus(
-		ctx,
-		donationID,
-		"confirmed",
-	); err != nil {
-		return err
-	}
-
-	return s.Aggregate(ctx, donation.CampaignID)
 }
 
 func (s *Service) IncrementAggregate(

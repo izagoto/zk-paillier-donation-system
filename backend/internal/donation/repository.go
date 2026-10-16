@@ -32,6 +32,47 @@ func NewRepository(db *pgxpool.Pool) *Repository {
 	}
 }
 
+func (r *Repository) FindByIdempotencyKey(
+	ctx context.Context,
+	idempotencyKey string,
+) (*Donation, error) {
+	donation := &Donation{}
+
+	err := r.db.QueryRow(
+		ctx,
+		`
+		SELECT
+			id,
+			campaign_id,
+			donor_id,
+			commitment,
+			encrypted_amount,
+			COALESCE(zk_proof, ''),
+			COALESCE(tx_hash, ''),
+			status,
+			created_at
+		FROM donations
+		WHERE idempotency_key = $1
+		`,
+		idempotencyKey,
+	).Scan(
+		&donation.ID,
+		&donation.CampaignID,
+		&donation.DonorID,
+		&donation.Commitment,
+		&donation.EncryptedAmount,
+		&donation.ZKProof,
+		&donation.TxHash,
+		&donation.Status,
+		&donation.CreatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return donation, nil
+}
+
 func (r *Repository) Create(
 	ctx context.Context,
 	campaignID uuid.UUID,
@@ -39,6 +80,7 @@ func (r *Repository) Create(
 	commitment string,
 	encryptedAmount string,
 	zkProof string,
+	idempotencyKey string,
 ) (*Donation, error) {
 	donation := &Donation{
 		ID: uuid.New(),
@@ -54,9 +96,10 @@ func (r *Repository) Create(
 				commitment,
 				encrypted_amount,
 				zk_proof,
+				idempotency_key,
 				status
 		)
-		VALUES ($1, $2, $3, $4, $5, $6, 'pending')
+		VALUES ($1, $2, $3, $4, $5, $6, NULLIF($7, ''), 'pending')
 		RETURNING
 			id,
 			campaign_id,
@@ -74,6 +117,7 @@ func (r *Repository) Create(
 		commitment,
 		encryptedAmount,
 		zkProof,
+		idempotencyKey,
 	).Scan(
 		&donation.ID,
 		&donation.CampaignID,

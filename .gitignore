@@ -1,18 +1,34 @@
 # Environment
 .env
 .env.*
+!.env.example
+!**/.env.example
 
 # Go
 bin/
 tmp/
+*.exe
+*.test
+coverage.out
+coverage/
 
 # Secrets
 keys/
+*.pem
+*.key
 
 # Node
 node_modules/
 .next/
 out/
+dist/
+frontend/dist/
+
+# Vite / tooling
+*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
 # IDE
 .idea/
@@ -20,9 +36,19 @@ out/
 
 # OS
 .DS_Store
+Thumbs.db
+
+# Database backups (jangan commit dump produksi/dev)
+*.dump
+*.sql.gz
+
 # ZK generated build artifacts
 zk/build/
 
 # Hardhat generated artifacts
 blockchain/artifacts/
 blockchain/cache/
+blockchain/typechain-types/
+
+# Editor / agent
+.cursor/

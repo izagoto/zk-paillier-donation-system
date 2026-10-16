@@ -11,6 +11,7 @@ import (
 	"github.com/izagoto/zk-paillier-donation-system/internal/campaign"
 	"github.com/izagoto/zk-paillier-donation-system/internal/crypto/paillier"
 	"github.com/izagoto/zk-paillier-donation-system/internal/donation"
+	"github.com/izagoto/zk-paillier-donation-system/internal/middleware"
 	"github.com/izagoto/zk-paillier-donation-system/internal/zk"
 )
 
@@ -18,11 +19,14 @@ func Setup(
 	db *pgxpool.Pool,
 	jwtSecret string,
 	paillierPublicKey *paillier.PublicKey,
+	paillierPrivateKey *paillier.PrivateKey,
 	zkVerifier *zk.Verifier,
+	zkProver *zk.Prover,
 	blockchainRegistry *blockchain.Registry,
 	blockchainSigner *blockchain.Signer,
 ) *gin.Engine {
 	r := gin.Default()
+	r.Use(middleware.CORS())
 
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{
@@ -30,7 +34,6 @@ func Setup(
 		})
 	})
 
-	// Authentication
 	userRepository := auth.NewUserRepository(db)
 	authService := auth.NewService(userRepository)
 
@@ -43,6 +46,27 @@ func Setup(
 		authService,
 		jwtManager,
 	)
+
+	campaignRepository := campaign.NewRepository(db)
+	campaignService := campaign.NewService(
+		campaignRepository,
+		blockchainRegistry,
+		blockchainSigner,
+	)
+	campaignHandler := campaign.NewHandler(campaignService)
+
+	donationRepository := donation.NewRepository(db)
+	donationService := donation.NewService(
+		donationRepository,
+		campaignRepository,
+		paillierPublicKey,
+		paillierPrivateKey,
+		zkVerifier,
+		zkProver,
+		blockchainRegistry,
+		blockchainSigner,
+	)
+	donationHandler := donation.NewHandler(donationService)
 
 	api := r.Group("/api")
 	{
@@ -57,44 +81,40 @@ func Setup(
 				protected.GET("/me", authHandler.Me)
 			}
 		}
-	}
 
-	// Campaign
-	campaignRepository := campaign.NewRepository(db)
-	campaignService := campaign.NewService(campaignRepository)
-	campaignHandler := campaign.NewHandler(campaignService)
-
-	campaignRoutes := api.Group("/campaigns")
-	{
-		campaignRoutes.GET("", campaignHandler.FindAll)
-		campaignRoutes.GET("/:id", campaignHandler.FindByID)
-
-		protectedCampaignRoutes := campaignRoutes.Group("")
-		protectedCampaignRoutes.Use(auth.AuthMiddleware(jwtManager))
+		campaignRoutes := api.Group("/campaigns")
 		{
-			protectedCampaignRoutes.POST("", campaignHandler.Create)
+			campaignRoutes.GET("", campaignHandler.FindAll)
+			campaignRoutes.GET(
+				"/:id/donations",
+				donationHandler.FindByCampaignID,
+			)
+			campaignRoutes.GET(
+				"/:id/aggregate",
+				donationHandler.GetCampaignAggregate,
+			)
+			campaignRoutes.GET("/:id", campaignHandler.FindByID)
+
+			protectedCampaignRoutes := campaignRoutes.Group("")
+			protectedCampaignRoutes.Use(auth.AuthMiddleware(jwtManager))
+			{
+				protectedCampaignRoutes.POST("", campaignHandler.Create)
+			}
 		}
-	}
 
-	// Donation
-	donationRepository := donation.NewRepository(db)
-	donationService := donation.NewService(
-		donationRepository,
-		campaignRepository,
-		paillierPublicKey,
-		zkVerifier,
-		blockchainRegistry,
-		blockchainSigner,
-	)
-
-	donationHandler := donation.NewHandler(donationService)
-	donationRoutes := api.Group("/donations")
-	{
-		protectedDonationRoutes := donationRoutes.Group("")
-		protectedDonationRoutes.Use(auth.AuthMiddleware(jwtManager))
+		donationRoutes := api.Group("/donations")
 		{
-			protectedDonationRoutes.POST("", donationHandler.Create)
-			protectedDonationRoutes.POST("/:id/confirm", donationHandler.Confirm)
+			donationRoutes.GET("/:id", donationHandler.FindByID)
+
+			protectedDonationRoutes := donationRoutes.Group("")
+			protectedDonationRoutes.Use(auth.AuthMiddleware(jwtManager))
+			{
+				protectedDonationRoutes.POST("", donationHandler.Create)
+				protectedDonationRoutes.POST(
+					"/generate-proof",
+					donationHandler.GenerateProof,
+				)
+			}
 		}
 	}
 

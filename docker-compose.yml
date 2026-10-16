@@ -1,0 +1,14 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: zkdonation
+      POSTGRES_PASSWORD: zkdonation
+      POSTGRES_DB: zk_donation
+    ports:
+      - "5432:5432"
+    volumes:
+      - zk_donation_pg:/var/lib/postgresql/data
+
+volumes:
+  zk_donation_pg:
