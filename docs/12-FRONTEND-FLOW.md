@@ -1,6 +1,6 @@
 # Alur Frontend (TrustGive)
 
-Melengkapi [05-WORKFLOW.md](05-WORKFLOW.md) dengan rute UI dan peran.
+Melengkapi [05-WORKFLOW.md](05-WORKFLOW.md) dengan rute UI dan peran. Panduan layar per tombol: [21-MANUAL-BOOK.md](21-MANUAL-BOOK.md).
 
 ## Peran dan rute utama
 
@@ -18,7 +18,7 @@ Registrasi hanya lewat API; UI hanya **login** ([10-AKSES-LOGIN.md](10-AKSES-LOG
 1. Jelajahi campaign → detail → **Donasi sekarang** → `/campaigns/:id/donate` (stepper Nominal → Konfirmasi → Proses).
 2. Backend: `POST /api/donations/generate-proof` lalu `POST /api/donations` dengan header `Idempotency-Key`.
 3. Riwayat: `GET /api/me/donations` (kolom `amount` hanya untuk donatur yang login).
-4. Bukti publik: `/verify/donation/:id` ← `GET /api/donations/:id/verify`.
+4. Bukti publik: **modal** di detail campaign (**Lihat bukti**) atau halaman `/verify/donation/:id` ← `GET /api/donations/:id/verify`.
 
 ## Alur pengelola
 
@@ -27,7 +27,24 @@ Registrasi hanya lewat API; UI hanya **login** ([10-AKSES-LOGIN.md](10-AKSES-LOG
 3. Bagikan tautan campaign (tombol **Bagikan**).
 4. Dashboard: grafik `GET /api/me/organizer/donation-stats?days=7`.
 
-Filter **Campaign saya**: `?mine=1` + `created_by === user.id` di klien.
+Filter **Campaign saya**: `?mine=1` + `created_by === user.id` di klien. Tab status di URL: `?mine=1&status=active` atau `status=other` (refresh mempertahankan tab).
+
+**Buat / kelola campaign:** modal atau `/campaigns/new`; modal **Buat campaign** hanya ditutup lewat tombol **X** atau **Batal** (bukan klik backdrop / Escape).
+
+## Jelajahi campaign (`/campaigns`)
+
+Grid kartu dalam `DataTableCard` dengan `scrollBody="fill"` bila banyak campaign (isi kartu scroll). Sedikit hasil filter: lebar kartu dibatasi (rata kiri).
+
+## DataTable (scroll & pagination)
+
+| Konteks | Scroll body jika (per halaman) |
+|---------|--------------------------------|
+| Campaign saya | > 6 baris |
+| Donasi masuk (organizer) | > 7 baris |
+| Riwayat donasi (donor) | > 10 baris |
+| Tab donasi / transparansi (detail) | > 5 baris |
+
+**Tampilkan N entri** disimpan di `sessionStorage` per halaman (`dataTablePageSizeStorage.ts`). Logika ambang: `frontend/src/lib/dataTableScroll.ts`.
 
 ## Layout
 

@@ -1,6 +1,6 @@
 # Checklist demo sidang (TrustGive)
 
-Gunakan dokumen ini sebagai urutan singkat sebelum presentasi. Detail teknis: [11-LOCAL-SETUP.md](11-LOCAL-SETUP.md), [10-AKSES-LOGIN.md](10-AKSES-LOGIN.md), [13-RELIABILITY.md](13-RELIABILITY.md). Keterbatasan untuk penguji: [16-KETERBATASAN-DEMO.md](16-KETERBATASAN-DEMO.md).
+Gunakan dokumen ini sebagai urutan singkat sebelum presentasi. Detail teknis: [11-LOCAL-SETUP.md](11-LOCAL-SETUP.md), [10-AKSES-LOGIN.md](10-AKSES-LOGIN.md), [13-RELIABILITY.md](13-RELIABILITY.md). Keterbatasan untuk penguji: [16-KETERBATASAN-DEMO.md](16-KETERBATASAN-DEMO.md). Panduan halaman UI: [21-MANUAL-BOOK.md](21-MANUAL-BOOK.md).
 
 ## Sebelum sidang (sekali)
 
@@ -29,7 +29,7 @@ Buka **http://localhost:5173**. Siapkan dua tab mental: dulu sebagai pengunjung,
 | Menit | Peran | URL / aksi | Yang bisa Anda katakan ke penguji |
 |-------|--------|------------|-----------------------------------|
 | 0–2 | Pengunjung | `/` → **Jelajahi campaign** → filter tab **Aktif** → **Lihat detail** pada satu campaign | “Tanpa akun, publik bisa melihat campaign dan total terkumpul; nominal per donatur tidak dipublikasikan.” |
-| 2–3 | Pengunjung | Di detail: tab **Tentang**, **Donasi masuk**, **Transparansi**; tunjuk agregat & badge *Donasi tercatat & dapat diaudit* | “Transparansi = jejak on-chain + agregat terenkripsi; privasi nominal dijelaskan di tab Transparansi.” |
+| 2–3 | Pengunjung | Di detail: tab **Tentang**, **Donasi masuk**, **Transparansi**; **Lihat bukti** (modal verifikasi); tunjuk agregat & badge *Donasi tercatat & dapat diaudit* | “Transparansi = jejak on-chain + agregat terenkripsi; privasi nominal dijelaskan di tab Transparansi.” |
 | 3–5 | Pengelola | `/login` → `pengelola@demo.local` / `demo12345` → `/organizer` | “Pengelola punya dashboard: jumlah campaign, grafik donasi 7 hari, campaign terbaru.” |
 | 5–7 | Pengelola | **Campaign saya** (`/campaigns?mine=1`) atau **Buat campaign**; buka detail campaign milik sendiri → **Kelola** (edit metadata/status) bila perlu | “Campaign terdaftar di DB dan batas maksimal donasi tercatat di smart contract.” |
 | 7–8 | Pengelola | **Donasi masuk** — tabel status + hash transaksi (tanpa nominal donatur) | “Pengelola melihat bukti masuk, bukan jumlah per orang.” |

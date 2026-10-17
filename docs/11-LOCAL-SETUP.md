@@ -66,6 +66,7 @@ Reliability (idempotency, retry, admin rekonsiliasi): [13-RELIABILITY.md](13-REL
 Checklist sidang: [14-SIDANG-DEMO.md](14-SIDANG-DEMO.md).  
 Smoke API (backend hidup): `./backend/scripts/smoke_api.sh`.  
 E2E Playwright: [15-E2E.md](15-E2E.md).  
+Manual book (panduan UI per role): [21-MANUAL-BOOK.md](21-MANUAL-BOOK.md).  
 Verifikasi gabungan: `./scripts/check-all.sh` (opsional `RUN_E2E_PUBLIC=1` jika Playwright terpasang).
 
 Cek koneksi:
