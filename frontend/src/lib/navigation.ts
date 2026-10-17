@@ -101,7 +101,7 @@ export function workspaceNavGroupsForRole(role: string): NavGroup[] {
         icon: ShieldCheck,
       });
     }
-    return [
+    const groups: NavGroup[] = [
       {
         title: 'Ringkasan',
         items: summaryItems,
@@ -121,11 +121,33 @@ export function workspaceNavGroupsForRole(role: string): NavGroup[] {
           },
         ],
       },
-      {
-        title: 'Akun',
-        items: [{ to: '/organizer/profile', label: NAV.profile, icon: User }],
-      },
     ];
+
+    if (canManageAdmin(role)) {
+      groups.push({
+        title: 'Donasi (admin)',
+        items: [
+          {
+            to: '/campaigns',
+            label: NAV.exploreCampaigns,
+            icon: Search,
+            end: true,
+          },
+          {
+            to: '/donor/donations',
+            label: NAV.donationHistory,
+            icon: Heart,
+          },
+        ],
+      });
+    }
+
+    groups.push({
+      title: 'Akun',
+      items: [{ to: '/organizer/profile', label: NAV.profile, icon: User }],
+    });
+
+    return groups;
   }
 
   if (canAudit(role) && !canCreateCampaign(role) && !canDonate(role)) {

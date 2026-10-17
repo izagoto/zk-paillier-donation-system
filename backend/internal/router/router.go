@@ -7,6 +7,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/izagoto/zk-paillier-donation-system/internal/auth"
+	"github.com/izagoto/zk-paillier-donation-system/internal/health"
 	"github.com/izagoto/zk-paillier-donation-system/internal/blockchain"
 	"github.com/izagoto/zk-paillier-donation-system/internal/campaign"
 	"github.com/izagoto/zk-paillier-donation-system/internal/crypto/paillier"
@@ -28,12 +29,11 @@ func Setup(
 ) (*gin.Engine, *donation.Service) {
 	r := gin.Default()
 	r.Use(middleware.CORS())
+	r.Use(middleware.RequestLog())
 
-	r.GET("/health", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"status": "ok",
-		})
-	})
+	healthHandler := health.NewHandler(db)
+	r.GET("/health", healthHandler.Live)
+	r.GET("/health/ready", healthHandler.Ready)
 
 	userRepository := auth.NewUserRepository(db)
 	authService := auth.NewService(userRepository)

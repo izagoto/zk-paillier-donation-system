@@ -22,7 +22,7 @@
 
 **Replay/idempotency:** migration `000006` + unique `idempotency_key`; replay mengembalikan HTTP 200; race insert ditangani dengan lookup ulang. Duplikat historis diarsipkan di `donations_duplicate_archive`.
 
-**Distributed consistency:** keberhasilan chain tidak selalu sinkron dengan DB. Tersedia retry donasi `failed`, admin `reconcile-pending`, dan hitung ulang agregat — bukan worker otomatis 24/7.
+**Distributed consistency:** keberhasilan chain tidak selalu sinkron dengan DB. Tersedia retry donasi `failed`, admin `reconcile-pending`, worker periodik `DONATION_PENDING_RECONCILE_SEC`, dan hitung ulang agregat — belum SLA produksi 24/7.
 
 **Kunci dan data sensitif:** private key Paillier, signer EVM, JWT secret, dan data user memerlukan penyimpanan serta akses terkontrol.
 
@@ -30,7 +30,19 @@
 
 Tabel `donations_duplicate_archive` (migration 000005) hanya untuk audit; kebijakan canonical ada di [13-RELIABILITY.md](13-RELIABILITY.md). Transaksi lama dari Hardhat yang sudah di-reset tidak dapat dianggap terverifikasi hanya berdasarkan tx hash.
 
-## 5. Pengujian keamanan yang direncanakan
+## 5. Properti privasi target (Phase 4)
+
+| Properti | Implementasi saat ini | Target penelitian |
+|----------|----------------------|-------------------|
+| Kerahasiaan nominal dari publik | Paillier pada agregat; nilai per-donasi tidak dipublikasikan di UI umum | Pertahankan; perjelas apa yang terlihat di chain |
+| Kerahasiaan dari backend | **Tidak** — amount plaintext di API | Client-side encryption + proof tanpa reveal ke server |
+| Integritas proof ↔ ciphertext | **Tidak** — circuit tidak memverifikasi ciphertext | Binding witness ke ciphertext yang disimpan |
+| Anti-replay donasi | Idempotency key + unique index | Evaluasi commitment reuse & concurrent load |
+| Konsistensi DB ↔ chain | Retry, rekonsiliasi pending, archive audit | Formalisasi state machine + bukti rekonsiliasi |
+
+Detail implementasi reliability: [13-RELIABILITY.md](13-RELIABILITY.md).
+
+## 6. Pengujian keamanan yang direncanakan
 
 - Invalid proof dan public input mismatch.
 - Replay proof/commitment dan concurrent duplicate submissions.
@@ -40,6 +52,6 @@ Tabel `donations_duplicate_archive` (migration 000005) hanya untuk audit; kebija
 - Pemeriksaan akses private key dan kebocoran log.
 - Pengujian pemulihan data setelah restart blockchain development.
 
-## 6. Batas penggunaan
+## 7. Batas penggunaan
 
 Prototipe tidak boleh digunakan untuk dana sungguhan atau dipromosikan sebagai anonimitas penuh sebelum audit, perbaikan integritas, dan validasi model privasi selesai.

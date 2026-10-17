@@ -23,6 +23,10 @@ type integrationZKProof struct {
 }
 
 func TestRecordDonationOnHardhat(t *testing.T) {
+	if os.Getenv("RUN_BLOCKCHAIN_INTEGRATION") != "1" {
+		t.Skip("set RUN_BLOCKCHAIN_INTEGRATION=1 to run Hardhat integration tests")
+	}
+
 	// Determine the absolute path of this test file.
 	_, currentFile, _, ok := runtime.Caller(0)
 	if !ok {
@@ -516,6 +520,10 @@ func TestRecordDonationOnHardhat(t *testing.T) {
 }
 
 func TestSetCampaignMaxDonationOnHardhat(t *testing.T) {
+	if os.Getenv("RUN_BLOCKCHAIN_INTEGRATION") != "1" {
+		t.Skip("set RUN_BLOCKCHAIN_INTEGRATION=1 to run Hardhat integration tests")
+	}
+
 	_, currentFile, _, ok := runtime.Caller(0)
 	if !ok {
 		t.Fatal("failed to determine current test file path")

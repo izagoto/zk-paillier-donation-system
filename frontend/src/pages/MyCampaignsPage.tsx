@@ -23,7 +23,10 @@ import { TableSkeleton } from '../components/workspace/TableSkeleton';
 import { useAuth } from '../context/AuthContext';
 import { useCampaignAggregates } from '../hooks/useCampaignAggregates';
 import { useCampaigns } from '../hooks/useCampaigns';
-import { campaignProgressPercent } from '../lib/campaignProgress';
+import {
+  campaignProgressPercent,
+  formatCampaignProgressPercent,
+} from '../lib/campaignProgress';
 import { NAV } from '../lib/navigation';
 import { formatAmount, formatDateTime } from '../lib/format';
 
@@ -221,7 +224,9 @@ export function MyCampaignsPage() {
                 return (
                   <span>
                     Rp {raised}{' '}
-                    <span className="text-xs text-zinc-500">({pct}%)</span>
+                    <span className="text-xs text-zinc-500">
+                      ({formatCampaignProgressPercent(pct)}%)
+                    </span>
                   </span>
                 );
               },

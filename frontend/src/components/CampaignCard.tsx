@@ -2,7 +2,10 @@ import { Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { AggregateSummary, Campaign } from '../api/client';
 import { CampaignCover } from './CampaignCover';
-import { campaignProgressPercent } from '../lib/campaignProgress';
+import {
+  campaignProgressPercent,
+  formatCampaignProgressPercent,
+} from '../lib/campaignProgress';
 import { formatAmount } from '../lib/format';
 import { ButtonLink } from './workspace/Button';
 import { StatusBadge } from './workspace/StatusBadge';
@@ -35,7 +38,7 @@ export function CampaignCard({ campaign, aggregate }: Props) {
           ) : null}
         </div>
         <span className="text-xs font-medium tabular-nums text-zinc-500">
-          {progress}%
+          {formatCampaignProgressPercent(progress)}%
         </span>
       </div>
       <h3 className="text-[15px] font-semibold text-zinc-900">

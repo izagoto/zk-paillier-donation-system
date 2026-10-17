@@ -19,7 +19,10 @@ import { Panel } from '../components/workspace/Panel';
 import { SegmentTabs } from '../components/workspace/SegmentTabs';
 import { StatusBadge } from '../components/workspace/StatusBadge';
 import { useAuth } from '../context/AuthContext';
-import { campaignProgressPercent } from '../lib/campaignProgress';
+import {
+  campaignProgressPercent,
+  formatCampaignProgressPercent,
+} from '../lib/campaignProgress';
 import { NAV } from '../lib/navigation';
 import { canCreateCampaign, canDonate } from '../lib/roles';
 import { formatAmount, formatDateTime, truncateMiddle } from '../lib/format';
@@ -184,7 +187,7 @@ export function CampaignDetailPage() {
                     </p>
                   </div>
                   <p className="text-lg font-semibold tabular-nums text-trust-primary">
-                    {progressPct}%
+                    {formatCampaignProgressPercent(progressPct)}%
                   </p>
                 </div>
                 <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-zinc-100">

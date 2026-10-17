@@ -14,6 +14,9 @@ fi
 echo "→ GET /health"
 curl -sf "$API_BASE/health" | jq -e '.status == "ok"' >/dev/null
 
+echo "→ GET /health/ready"
+curl -sf "$API_BASE/health/ready" | jq -e '.status == "ok" and .database == "up"' >/dev/null
+
 echo "→ POST /api/auth/login ($DONOR_EMAIL)"
 TOKEN="$(
 	curl -sf -X POST "$API_BASE/api/auth/login" \

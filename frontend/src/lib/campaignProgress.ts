@@ -21,8 +21,24 @@ export function campaignProgressPercent(
       return 0;
     }
     const raised = campaignRaisedAmount(aggregate);
-    return Math.min(100, Number((raised * BigInt(100)) / target));
+    if (raised <= 0) {
+      return 0;
+    }
+    // Hindari 0% saat sudah ada terkumpul (integer BigInt / target membulatkan ke bawah).
+    const pct = (Number(raised) * 100) / Number(target);
+    return Math.min(100, Math.round(pct * 10) / 10);
   } catch {
     return 0;
   }
+}
+
+/** Label persen untuk UI (satu desimal jika &lt; 10%). */
+export function formatCampaignProgressPercent(pct: number): string {
+  if (pct <= 0) {
+    return '0';
+  }
+  if (pct < 10 && !Number.isInteger(pct)) {
+    return pct.toFixed(1).replace('.', ',');
+  }
+  return String(Math.round(pct));
 }

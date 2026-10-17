@@ -1,8 +1,8 @@
 # Product Requirements Document (PRD)
 
 **Produk:** zk-paillier-donation-system  
-**Tahap:** prototipe penelitian / backend MVP  
-**Status:** kebutuhan target; implementasi parsial
+**Tahap:** prototipe penelitian / MVP demo sidang (lokal)  
+**Status:** kebutuhan P0–P1 terpenuhi untuk happy path + reliability demo; FR-15 dan hardening produksi (Phase 4–5) belum
 
 ## 1. Visi Produk
 
@@ -34,12 +34,12 @@ Donatur ingin mengetahui bahwa donasinya tercatat dan tidak dihitung dua kali. P
 | FR-06 | Enkripsi nominal dengan Paillier | P0 | Sudah diuji |
 | FR-07 | Simpan donasi dan rekam blockchain | P0 | Sudah diuji pada happy path |
 | FR-08 | Hitung aggregate terenkripsi | P0 | Sudah diuji |
-| FR-09 | Pencegahan duplicate/replay secara atomik | P0 | Belum selesai |
-| FR-10 | Retry, recovery, reconciliation | P0 | Belum selesai |
-| FR-11 | Arsip duplikasi historis untuk audit | P1 | Tabel sudah dibuat; proses belum |
+| FR-09 | Pencegahan duplicate/replay secara atomik | P0 | Sudah diuji (idempotency key, HTTP 200 replay; lihat [13-RELIABILITY.md](13-RELIABILITY.md)) |
+| FR-10 | Retry, recovery, reconciliation | P0 | Sudah diuji (retry failed, admin + worker pending, reconcile agregat) |
+| FR-11 | Arsip duplikasi historis untuk audit | P1 | Tabel + kebijakan canonical; baca-only via admin API/UI |
 | FR-12 | UI daftar/detail campaign | P1 | MVP TrustGive |
 | FR-13 | UI pengiriman dan status donasi | P1 | MVP TrustGive |
-| FR-14 | Halaman verifikasi publik | P1 | Direncanakan |
+| FR-14 | Halaman verifikasi publik | P1 | MVP TrustGive (`GET /api/donations/:id/verify`) |
 | FR-15 | Proof-ciphertext consistency | P0 penelitian | Belum diimplementasikan |
 
 ## 5. User Stories
@@ -62,6 +62,8 @@ Donatur ingin mengetahui bahwa donasinya tercatat dan tidak dihitung dua kali. P
 7. Kegagalan RPC/DB memiliki jalur recovery yang diuji.
 8. Pengguna dapat menyelesaikan happy path melalui UI setelah frontend dibuat.
 9. Dokumentasi menyatakan secara jelas batas privasi prototipe.
+
+Bukti kriteria 6–8 pada demo lokal: [13-RELIABILITY.md](13-RELIABILITY.md), [14-SIDANG-DEMO.md](14-SIDANG-DEMO.md), [09-ROADMAP.md](09-ROADMAP.md).
 
 ## 7. Kebutuhan Nonfungsional
 

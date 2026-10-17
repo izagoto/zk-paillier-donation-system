@@ -9,7 +9,7 @@ Melengkapi [05-WORKFLOW.md](05-WORKFLOW.md) dengan rute UI dan peran.
 | `donor` | `/donor` | Dashboard, Jelajahi campaign, Riwayat donasi, Profil |
 | `organizer` | `/organizer` | Dashboard, Campaign saya, Donasi masuk, Profil |
 | `auditor` | `/auditor` | Transparansi, Jelajahi campaign |
-| `admin` | `/organizer` | Gabungan izin pengelola + donatur (donasi via `/campaigns/:id/donate`) |
+| `admin` | `/organizer` | Pengelola + menu **Rekonsiliasi**; grup **Donasi (admin)** untuk jelajahi campaign & riwayat donasi |
 
 Registrasi hanya lewat API; UI hanya **login** ([10-AKSES-LOGIN.md](10-AKSES-LOGIN.md)).
 

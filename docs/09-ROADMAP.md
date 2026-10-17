@@ -45,7 +45,7 @@ Cakupan: auth, campaign, Paillier, circuit dan Groth16, smart contract, API dona
 
 **Status:** penelitian lanjutan.
 
-- [ ] Definisikan threat model dan properti privasi.
+- [x] Definisikan threat model dan properti privasi (ringkas di [08-KEAMANAN.md](08-KEAMANAN.md) §5).
 - [ ] Desain proof-to-ciphertext binding.
 - [ ] Evaluasi client-side encryption dan pengelolaan randomness.
 - [ ] Benchmark proof generation/verification serta Paillier.
@@ -55,12 +55,15 @@ Cakupan: auth, campaign, Paillier, circuit dan Groth16, smart contract, API dona
 
 ## Phase 5 — Pengujian dan staging
 
-**Status:** direncanakan.
+**Status:** dimulai (CI lokal/GitHub Actions); staging penuh belum.
 
-- [ ] Integration/E2E/security tests.
-- [ ] Observability, backup, recovery, staging.
+- [x] CI: `go test` (tanpa integrasi Hardhat default) + `frontend` build (`.github/workflows/ci.yml`).
+- [x] E2E browser Playwright — tes publik di CI; login/API lokal (`@integration`, lihat [15-E2E.md](15-E2E.md)).
+- [ ] E2E alur donasi penuh + security tests terstruktur.
+- [x] Observability dasar: log request (`X-Request-Id`), `/health/ready` (ping DB).
+- [ ] Backup, recovery, environment staging.
 - [ ] Evaluasi correctness, privacy, performance, reliability.
-- [ ] Dokumentasi hasil eksperimen dan keterbatasan.
+- [x] Dokumentasi keterbatasan demo ([16-KETERBATASAN-DEMO.md](16-KETERBATASAN-DEMO.md)); laporan eksperimen formal masih terbuka.
 
 ## Next step langsung
 

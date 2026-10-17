@@ -61,12 +61,21 @@ Akun **admin** (rekonsiliasi UI): `POST /api/auth/register` dengan `BOOTSTRAP_TO
 
 Reliability (idempotency, retry, admin rekonsiliasi): [13-RELIABILITY.md](13-RELIABILITY.md).  
 Checklist sidang: [14-SIDANG-DEMO.md](14-SIDANG-DEMO.md).  
-Smoke API (backend hidup): `./backend/scripts/smoke_api.sh`.
+Smoke API (backend hidup): `./backend/scripts/smoke_api.sh`.  
+E2E Playwright: [15-E2E.md](15-E2E.md).
 
 Cek koneksi:
 
 ```bash
 psql "$DATABASE_URL" -c "SELECT 1;"
+```
+
+Setelah backend jalan: `curl -s http://localhost:8080/health/ready` harus `database: up`.
+
+Uji integrasi blockchain (opsional, butuh Hardhat + `.env`):
+
+```bash
+cd backend && RUN_BLOCKCHAIN_INTEGRATION=1 go test ./internal/blockchain/... -count=1
 ```
 
 ## 2. Blockchain

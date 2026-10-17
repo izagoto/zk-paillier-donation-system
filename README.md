@@ -2,7 +2,7 @@
 
 **Prototipe sistem donasi transparan berbasis blockchain, Paillier Homomorphic Encryption, dan zk-SNARK.**
 
-> **Status:** penelitian / demo lokal (backend + frontend MVP). **Bukan layanan keuangan produksi.** Backend masih melihat nominal donasi dalam plaintext; proof zk **belum** mengikat ciphertext Paillier.
+> **Status:** MVP demo sidang (backend + frontend TrustGive, reliability Phase 2). **Bukan layanan keuangan produksi.** Backend masih melihat nominal donasi dalam plaintext; proof zk **belum** mengikat ciphertext Paillier (Phase 4).
 
 **Repository:** https://github.com/izagoto/zk-paillier-donation-system
 
@@ -31,17 +31,19 @@ Flow lengkap: **[docs/10-AKSES-LOGIN.md](docs/10-AKSES-LOGIN.md)**.
 4. Buat akun `organizer` + `donor` via `POST /api/auth/register` + `X-Bootstrap-Token` (lihat docs)
 5. `cd frontend && npm run dev` → http://localhost:5173
 
+**Checklist sidang:** **[docs/14-SIDANG-DEMO.md](docs/14-SIDANG-DEMO.md)** · smoke API: `./backend/scripts/smoke_api.sh`  
 **Troubleshooting** (`email already exists`, role pengelola, `psql`, npm audit): **[docs/11-LOCAL-SETUP.md](docs/11-LOCAL-SETUP.md)**.
 
 ## Fitur yang sudah diuji
 
-- Login JWT (tanpa UI registrasi).
-- Frontend TrustGive: campaign, donasi, proof, status transaksi, ringkasan agregat.
+- Login JWT (tanpa UI registrasi), RBAC donor / organizer / auditor / admin.
+- Frontend TrustGive: campaign, donasi full-page, proof, status & retry, verifikasi publik, dashboard per peran, admin rekonsiliasi.
 - Campaign on-chain (`max_donation`), Paillier, Groth16, `DonationRegistry` (Hardhat).
-- Idempotency key pada donasi (migration **000006**).
-- Arsip duplikasi historis (migration **000005**).
+- Idempotency key (migration **000006**), replay HTTP 200, race unique constraint.
+- Arsip duplikasi historis (migration **000005**) + kebijakan canonical record.
+- Retry donasi `failed`, rekonsiliasi pending (admin UI + worker `DONATION_PENDING_RECONCILE_SEC`), hitung ulang agregat.
 
-**Penelitian lanjutan:** rekonsiliasi DB↔chain penuh, proof-to-ciphertext binding, deployment produksi.
+**Belum / penelitian lanjutan:** proof-to-ciphertext binding, E2E CI, observability & staging produksi — lihat [docs/09-ROADMAP.md](docs/09-ROADMAP.md) Phase 4–5.
 
 ## Teknologi
 
@@ -82,8 +84,13 @@ flowchart TD
 | [Teknologi](docs/07-TEKNOLOGI.md) | Stack |
 | [Keamanan](docs/08-KEAMANAN.md) | Threat model |
 | [Roadmap](docs/09-ROADMAP.md) | Tahapan pengembangan |
-| [Setup lokal](docs/11-LOCAL-SETUP.md) | Menjalankan semua komponen |
 | [**Akses & login**](docs/10-AKSES-LOGIN.md) | Siapa login, bootstrap akun |
+| [Setup lokal](docs/11-LOCAL-SETUP.md) | Menjalankan semua komponen |
+| [Alur frontend](docs/12-FRONTEND-FLOW.md) | Halaman dan navigasi TrustGive |
+| [Reliability](docs/13-RELIABILITY.md) | Idempotency, retry, rekonsiliasi |
+| [Demo sidang](docs/14-SIDANG-DEMO.md) | Checklist presentasi |
+| [E2E Playwright](docs/15-E2E.md) | Tes UI otomatis |
+| [Keterbatasan demo](docs/16-KETERBATASAN-DEMO.md) | Scope sidang & penelitian |
 
 ## Keamanan
 
