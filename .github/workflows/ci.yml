@@ -38,4 +38,6 @@ jobs:
       - name: Install Playwright Chromium
         run: npx playwright install chromium --with-deps
       - name: E2E publik
+        env:
+          CI: true
         run: npm run test:e2e:public

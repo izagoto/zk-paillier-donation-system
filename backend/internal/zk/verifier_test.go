@@ -8,7 +8,15 @@ import (
 	"testing"
 )
 
+func skipIfZKArtifactsMissing(t *testing.T) {
+	if !ArtifactsPresent() {
+		t.Skip("zk/build/verification_key.json missing; compile circuits locally (see docs/11-LOCAL-SETUP.md)")
+	}
+}
+
 func TestVerifierValidProof(t *testing.T) {
+	skipIfZKArtifactsMissing(t)
+
 	verifier, err := NewVerifier()
 	if err != nil {
 		t.Fatalf("create verifier: %v", err)
@@ -39,6 +47,8 @@ func TestVerifierValidProof(t *testing.T) {
 }
 
 func TestVerifierInvalidProof(t *testing.T) {
+	skipIfZKArtifactsMissing(t)
+
 	verifier, err := NewVerifier()
 	if err != nil {
 		t.Fatalf("create verifier: %v", err)
@@ -69,6 +79,8 @@ func TestVerifierInvalidProof(t *testing.T) {
 }
 
 func TestVerifierStructuredProof(t *testing.T) {
+	skipIfZKArtifactsMissing(t)
+
 	verifier, err := NewVerifier()
 	if err != nil {
 		t.Fatalf("create verifier: %v", err)

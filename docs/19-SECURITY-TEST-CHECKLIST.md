@@ -8,7 +8,7 @@ Mapping ke implementasi dan cara menjalankan.
 | Idempotency key wajib | Ya | `service_create_test.go`, `handler_create_test.go` |
 | Unique violation Postgres | Ya | `TestIsUniqueViolation` |
 | Replay idempotency (HTTP 200) | Manual / skrip | [13-RELIABILITY.md](13-RELIABILITY.md), `concurrent_idempotency.sh` |
-| Proof Groth16 valid/invalid | Ya (zk package) | `go test ./internal/zk/...` |
+| Proof Groth16 valid/invalid | Ya (lokal, butuh `zk/build/`) | `go test ./internal/zk/...` — di CI di-skip jika artefak tidak ada |
 | Integrasi chain + proof | Opsional | `RUN_BLOCKCHAIN_INTEGRATION=1 go test ./internal/blockchain/...` |
 | UI publik tanpa auth | Ya (CI) | `npm run test:e2e:public` |
 | Login + API ready | Lokal | `E2E_DONOR_*`, `E2E_EXPECT_BACKEND=1` — [15-E2E.md](15-E2E.md) |
