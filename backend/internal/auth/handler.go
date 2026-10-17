@@ -13,17 +13,20 @@ type Handler struct {
 	service        *Service
 	jwtManager     *JWTManager
 	bootstrapToken string
+	loginLimiter   *LoginRateLimiter
 }
 
 func NewHandler(
 	service *Service,
 	jwtManager *JWTManager,
 	bootstrapToken string,
+	loginLimiter *LoginRateLimiter,
 ) *Handler {
 	return &Handler{
 		service:        service,
 		jwtManager:     jwtManager,
 		bootstrapToken: bootstrapToken,
+		loginLimiter:   loginLimiter,
 	}
 }
 
@@ -91,6 +94,12 @@ func (h *Handler) Register(c *gin.Context) {
 				"error": err.Error(),
 			})
 
+		case errors.Is(err, ErrPasswordTooShort),
+			errors.Is(err, ErrPasswordTooLong):
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": err.Error(),
+			})
+
 		default:
 			log.Printf("register error: %v", err)
 
@@ -133,6 +142,9 @@ func (h *Handler) Login(c *gin.Context) {
 			})
 
 		case errors.Is(err, ErrInvalidCredentials):
+			if h.loginLimiter != nil {
+				h.loginLimiter.RecordFailure(c)
+			}
 			c.JSON(http.StatusUnauthorized, gin.H{
 				"error": err.Error(),
 			})
@@ -146,6 +158,10 @@ func (h *Handler) Login(c *gin.Context) {
 		}
 
 		return
+	}
+
+	if h.loginLimiter != nil {
+		h.loginLimiter.RecordSuccess(c)
 	}
 
 	token, err := h.jwtManager.GenerateToken(user)

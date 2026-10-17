@@ -26,6 +26,22 @@
 
 **Kunci dan data sensitif:** private key Paillier, signer EVM, JWT secret, dan data user memerlukan penyimpanan serta akses terkontrol.
 
+### Autentikasi login (TrustGive)
+
+| Kontrol | Implementasi |
+|---------|----------------|
+| Penyimpanan password | bcrypt (`golang.org/x/crypto/bcrypt`) |
+| Respons gagal login | Satu pesan generik — tidak membedakan email tidak ada vs password salah |
+| Timing user enumeration | Verifikasi bcrypt tetap dijalankan untuk email tidak terdaftar (hash dummy) |
+| Brute force | Rate limit per IP pada `POST /api/auth/login` (`AUTH_LOGIN_MAX_ATTEMPTS`, `AUTH_LOGIN_WINDOW_MIN`) |
+| Kebijakan password (register) | Minimal 8 karakter, maks. 128 byte |
+| Sesi API | JWT HS256, masa berlaku 24 jam; role di server (middleware), bukan hanya UI |
+| Header HTTP | `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, dll. |
+
+**Batasan demo:** limiter in-memory (reset saat restart backend); token di `localStorage` rentan XSS — untuk produksi pertimbangkan cookie `HttpOnly` + HTTPS dan WAF/reverse proxy.
+
+**Uji manual sebelum sidang:** checklist baris login di [19-SECURITY-TEST-CHECKLIST.md](19-SECURITY-TEST-CHECKLIST.md).
+
 ## 4. Kebijakan data historis
 
 Tabel `donations_duplicate_archive` (migration 000005) hanya untuk audit; kebijakan canonical ada di [13-RELIABILITY.md](13-RELIABILITY.md). Transaksi lama dari Hardhat yang sudah di-reset tidak dapat dianggap terverifikasi hanya berdasarkan tx hash.

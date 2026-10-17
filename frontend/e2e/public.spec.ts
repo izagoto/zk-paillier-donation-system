@@ -12,7 +12,7 @@ test.describe('publik @public', () => {
 
   test('halaman login', async ({ page }) => {
     await page.goto('/login');
-    await expect(page.getByRole('heading', { name: /Masuk ke akun/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Masuk ke TrustGive/i })).toBeVisible();
     await expect(page.getByLabel('Email')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Masuk' })).toBeVisible();
   });

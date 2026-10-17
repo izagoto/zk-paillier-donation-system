@@ -8,8 +8,7 @@ export function LoginPage() {
 
   return (
     <AuthLayout
-      title="Masuk ke akun Anda"
-      subtitle="Kelola campaign dan kirim donasi dengan bukti kriptografis."
+      title="Masuk ke TrustGive"
       footer={
         <p>
           Belum punya akun? Hubungi administrator TrustGive untuk pendaftaran.

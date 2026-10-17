@@ -108,7 +108,10 @@ curl -s -X POST http://127.0.0.1:8080/api/auth/register \
 ### Antarmuka web (TrustGive)
 
 - URL: http://localhost:5173/login  
+- Judul form: **Masuk ke TrustGive**; tidak ada subjudul marketing di kolom kanan (value prop ada di panel biru kiri).
 - **Tidak ada** tautan atau halaman registrasi; kredensial hanya dari bootstrap API (lihat atas).
+- Password register minimal **8** karakter (API); login gagal selalu pesan generik di UI/API.
+- Rate limit login gagal: default **10** percobaan per IP per **15** menit (`AUTH_LOGIN_MAX_ATTEMPTS`, `AUTH_LOGIN_WINDOW_MIN` di `backend/.env`). Detail: [08-KEAMANAN.md](08-KEAMANAN.md).
 - Setelah login, menu menyesuaikan role: **Buat Campaign** hanya untuk `organizer` / `admin`; donasi hanya untuk `donor` / `admin`.
 - Pengunjung tanpa login tetap dapat membuka beranda dan daftar campaign.
 
@@ -159,6 +162,8 @@ psql "$DATABASE_URL" -c \
 | `email already exists` | Email sudah di DB | Login atau email lain |
 | `forbidden` pada register | Token bootstrap salah / DB sudah terisi | Perbaiki `BOOTSTRAP_TOKEN` atau login sebagai admin |
 | Menu Buat Campaign tidak muncul | JWT role masih `donor` | `UPDATE role` + logout/login |
+| *Email atau kata sandi salah* padahal yakin benar | Typo password / akun belum register / role salah | Ulangi curl register; cek `users` di DB |
+| *Terlalu banyak percobaan masuk* | Rate limit IP setelah banyak gagal | Tunggu ~15 menit atau restart backend (demo) |
 | `psql` database "zagoto" | `DATABASE_URL` tidak di-export | `source backend/.env` |
 | `role zkdonation does not exist` | URL Docker dipakai di Postgres lokal | Sesuaikan `DATABASE_URL` di `.env` |
 

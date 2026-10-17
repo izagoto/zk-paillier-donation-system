@@ -48,10 +48,13 @@ Detail: [11-LOCAL-SETUP.md](11-LOCAL-SETUP.md).
 
 ### 3.2 Login & logout
 
-1. Buka **Masuk** (`/login`).
-2. Isi email dan password akun demo.
-3. Setelah sukses, Anda diarahkan ke **dashboard** sesuai role.
-4. **Keluar** lewat menu avatar (header kanan) sebelum ganti peran (mis. pengelola → donatur).
+1. Buka **Masuk** (`/login`) — judul form: **Masuk ke TrustGive**.
+2. Isi **email** dan **kata sandi** (contoh sidang: `pengelola@demo.local` / `demo12345` — lihat [10-AKSES-LOGIN.md](10-AKSES-LOGIN.md)).
+3. Jika format email salah atau field kosong, pesan muncul di bawah field (Bahasa Indonesia).
+4. Jika email/password tidak cocok dengan database, pesan: **Email atau kata sandi salah.** (satu pesan untuk keduanya — tidak mengungkap akun ada atau tidak).
+5. Setelah **banyak** percobaan gagal dari IP yang sama, sistem membatasi sementara (*Terlalu banyak percobaan masuk…*).
+6. Setelah sukses, Anda diarahkan ke **dashboard** sesuai role.
+7. **Keluar** lewat menu avatar (header kanan) sebelum ganti peran (mis. pengelola → donatur).
 
 ### 3.3 Data demo opsional
 

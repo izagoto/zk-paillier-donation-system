@@ -8,7 +8,7 @@ export function AuthLayout({
   footer,
 }: {
   title: string;
-  subtitle: string;
+  subtitle?: string;
   children: React.ReactNode;
   footer?: React.ReactNode;
 }) {
@@ -49,7 +49,7 @@ export function AuthLayout({
           <div className="auth-form-wrap">
             <header className="auth-form__header">
               <h1>{title}</h1>
-              <p>{subtitle}</p>
+              {subtitle ? <p>{subtitle}</p> : null}
             </header>
             {children}
             {footer ? <footer className="auth-form__footer">{footer}</footer> : null}

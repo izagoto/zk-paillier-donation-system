@@ -58,7 +58,12 @@ Tamu melihat ringkasan campaign aktif (maks. 6) dalam panel **Campaign aktif**. 
 
 ## Login
 
-Halaman `/login` memakai layout kartu split (`AuthLayout` + `auth.css`), mark `trustgive-mark.svg`, redirect per role setelah sukses.
+Halaman `/login` memakai layout kartu split (`AuthLayout` + `auth.css`), judul form **Masuk ke TrustGive**, redirect per role setelah sukses.
+
+- Validasi klien (`noValidate` + `loginValidation.ts`): email wajib/format, kata sandi wajib — pesan Indonesia di `auth-form__alert`.
+- Gagal API: pesan aman via `authMessages.ts` (satu kalimat untuk kredensial salah; tidak membedakan email terdaftar atau tidak).
+- Terlalu banyak percobaan gagal: backend HTTP 429 → *Terlalu banyak percobaan masuk…*
+- Keamanan server (bcrypt, rate limit per IP): [08-KEAMANAN.md](08-KEAMANAN.md), [10-AKSES-LOGIN.md](10-AKSES-LOGIN.md).
 
 ## API campaign (metadata)
 

@@ -13,6 +13,7 @@ var (
 	ErrEmailRequired      = errors.New("email is required")
 	ErrPasswordRequired   = errors.New("password is required")
 	ErrEmailExists        = errors.New("email already exists")
+	// Pesan generik — jangan bedakan email tidak ada vs password salah.
 	ErrInvalidCredentials = errors.New("invalid email or password")
 )
 
@@ -44,6 +45,10 @@ func (s *Service) Register(
 
 	if password == "" {
 		return nil, ErrPasswordRequired
+	}
+
+	if err := ValidatePasswordPolicy(password); err != nil {
+		return nil, err
 	}
 
 	normalizedRole, err := NormalizeRole(role)
@@ -88,12 +93,26 @@ func (s *Service) Login(
 		return nil, ErrPasswordRequired
 	}
 
-	user, err := s.repository.FindByEmail(ctx, email)
-	if err != nil {
+	if len(password) > MaxPasswordBytes {
 		return nil, ErrInvalidCredentials
 	}
 
-	if err := CheckPassword(password, user.PasswordHash); err != nil {
+	user, err := s.repository.FindByEmail(ctx, email)
+	hashToCheck := dummyPasswordHash
+	if err != nil {
+		if !errors.Is(err, pgx.ErrNoRows) {
+			return nil, err
+		}
+		user = nil
+	} else {
+		hashToCheck = user.PasswordHash
+	}
+
+	if err := CheckPassword(password, hashToCheck); err != nil {
+		return nil, ErrInvalidCredentials
+	}
+
+	if user == nil {
 		return nil, ErrInvalidCredentials
 	}
 

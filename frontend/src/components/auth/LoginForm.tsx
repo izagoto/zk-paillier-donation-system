@@ -1,6 +1,8 @@
 import { Eye, EyeOff, Lock, LogIn, User } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { loginErrorMessage } from '../../lib/authMessages';
+import { validateLoginFields } from '../../lib/loginValidation';
 
 type Props = {
   onSuccess?: (role: string) => void;
@@ -17,27 +19,42 @@ export function LoginForm({ onSuccess }: Props) {
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
     setError('');
+
+    const check = validateLoginFields(email, password);
+    if (!check.ok) {
+      setError(check.message);
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const me = await login(email, password);
+      const me = await login(check.email, password);
       onSuccess?.(me.role);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login gagal');
+      const apiMessage = err instanceof Error ? err.message : '';
+      const status =
+        err && typeof err === 'object' && 'status' in err
+          ? (err as { status?: number }).status
+          : undefined;
+      setError(loginErrorMessage(apiMessage, status));
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <form className="auth-form" onSubmit={onSubmit}>
+    <form className="auth-form" onSubmit={onSubmit} noValidate>
       <div className="auth-input">
         <User className="auth-input__icon" strokeWidth={1.75} aria-hidden />
         <input
           className="auth-input__field"
           type="email"
           name="email"
-          autoComplete="email"
+          autoComplete="username"
+          inputMode="email"
+          spellCheck={false}
+          aria-required="true"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="Email"
@@ -58,6 +75,7 @@ export function LoginForm({ onSuccess }: Props) {
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Password"
           aria-label="Password"
+          aria-required="true"
           required
           disabled={loading}
         />

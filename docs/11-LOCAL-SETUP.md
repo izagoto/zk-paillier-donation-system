@@ -175,7 +175,9 @@ curl -s -X POST http://127.0.0.1:8080/api/auth/register \
 | `pengelola@demo.local` | `organizer` | Buat campaign |
 | `donatur@demo.local` | `donor` | Kirim donasi |
 
-Password contoh: `demo12345`
+Password contoh: `demo12345` (minimal 8 karakter untuk register API).
+
+Opsional di `backend/.env` — batas login gagal per IP: `AUTH_LOGIN_MAX_ATTEMPTS=10`, `AUTH_LOGIN_WINDOW_MIN=15`. Lihat [08-KEAMANAN.md](08-KEAMANAN.md).
 
 ## Alur demo
 

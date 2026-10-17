@@ -20,6 +20,8 @@ func Setup(
 	db *pgxpool.Pool,
 	jwtSecret string,
 	bootstrapToken string,
+	loginMaxAttempts int,
+	loginWindow time.Duration,
 	paillierPublicKey *paillier.PublicKey,
 	paillierPrivateKey *paillier.PrivateKey,
 	zkVerifier *zk.Verifier,
@@ -28,6 +30,7 @@ func Setup(
 	blockchainSigner *blockchain.Signer,
 ) (*gin.Engine, *donation.Service) {
 	r := gin.Default()
+	r.Use(middleware.SecurityHeaders())
 	r.Use(middleware.CORS())
 	r.Use(middleware.RequestLog())
 
@@ -43,10 +46,13 @@ func Setup(
 		24*time.Hour,
 	)
 
+	loginLimiter := auth.NewLoginRateLimiter(loginMaxAttempts, loginWindow)
+
 	authHandler := auth.NewHandler(
 		authService,
 		jwtManager,
 		bootstrapToken,
+		loginLimiter,
 	)
 
 	campaignRepository := campaign.NewRepository(db)
@@ -79,7 +85,11 @@ func Setup(
 				auth.OptionalAuthMiddleware(jwtManager),
 				authHandler.Register,
 			)
-			authRoutes.POST("/login", authHandler.Login)
+			authRoutes.POST(
+				"/login",
+				auth.LoginRateLimitMiddleware(loginLimiter),
+				authHandler.Login,
+			)
 
 			protected := authRoutes.Group("")
 			protected.Use(auth.AuthMiddleware(jwtManager))

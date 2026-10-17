@@ -19,6 +19,9 @@ type Config struct {
 	BootstrapToken       string
 	// Detik antar rekonsiliasi donasi pending; 0 = nonaktif.
 	PendingReconcileSec int
+	// Batas percobaan login gagal per IP (in-memory).
+	AuthLoginMaxAttempts int
+	AuthLoginWindowMin   int
 }
 
 func Load() (*Config, error) {
@@ -36,6 +39,20 @@ func Load() (*Config, error) {
 		}
 	}
 
+	loginMax := 10
+	if raw := os.Getenv("AUTH_LOGIN_MAX_ATTEMPTS"); raw != "" {
+		if parsed, err := strconv.Atoi(raw); err == nil && parsed > 0 {
+			loginMax = parsed
+		}
+	}
+
+	loginWindowMin := 15
+	if raw := os.Getenv("AUTH_LOGIN_WINDOW_MIN"); raw != "" {
+		if parsed, err := strconv.Atoi(raw); err == nil && parsed > 0 {
+			loginWindowMin = parsed
+		}
+	}
+
 	return &Config{
 		AppPort:              os.Getenv("APP_PORT"),
 		DatabaseURL:          os.Getenv("DATABASE_URL"),
@@ -47,5 +64,7 @@ func Load() (*Config, error) {
 		BlockchainPrivateKey: os.Getenv("BLOCKCHAIN_PRIVATE_KEY"),
 		BootstrapToken:       os.Getenv("BOOTSTRAP_TOKEN"),
 		PendingReconcileSec:  pendingSec,
+		AuthLoginMaxAttempts: loginMax,
+		AuthLoginWindowMin:   loginWindowMin,
 	}, nil
 }

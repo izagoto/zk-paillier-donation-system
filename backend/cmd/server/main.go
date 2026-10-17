@@ -103,6 +103,8 @@ func main() {
 		db,
 		cfg.JWTSecret,
 		cfg.BootstrapToken,
+		cfg.AuthLoginMaxAttempts,
+		time.Duration(cfg.AuthLoginWindowMin)*time.Minute,
 		paillierKeyManager.PublicKey,
 		paillierKeyManager.PrivateKey,
 		zkVerifier,
