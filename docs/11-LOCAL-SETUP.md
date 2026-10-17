@@ -62,7 +62,8 @@ Akun **admin** (rekonsiliasi UI): `POST /api/auth/register` dengan `BOOTSTRAP_TO
 Reliability (idempotency, retry, admin rekonsiliasi): [13-RELIABILITY.md](13-RELIABILITY.md).  
 Checklist sidang: [14-SIDANG-DEMO.md](14-SIDANG-DEMO.md).  
 Smoke API (backend hidup): `./backend/scripts/smoke_api.sh`.  
-E2E Playwright: [15-E2E.md](15-E2E.md).
+E2E Playwright: [15-E2E.md](15-E2E.md).  
+Verifikasi gabungan: `./scripts/check-all.sh` (opsional `RUN_E2E_PUBLIC=1` jika Playwright terpasang).
 
 Cek koneksi:
 

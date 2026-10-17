@@ -91,6 +91,10 @@ flowchart TD
 | [Demo sidang](docs/14-SIDANG-DEMO.md) | Checklist presentasi |
 | [E2E Playwright](docs/15-E2E.md) | Tes UI otomatis |
 | [Keterbatasan demo](docs/16-KETERBATASAN-DEMO.md) | Scope sidang & penelitian |
+| [Binding zk–Paillier (desain)](docs/17-PROOF-CIPHERTEXT-BINDING.md) | Phase 4 |
+| [Backup demo](docs/18-BACKUP-RECOVERY-DEMO.md) | pg_dump & reset Hardhat |
+| [Security checklist](docs/19-SECURITY-TEST-CHECKLIST.md) | Uji otomatis vs manual |
+| [Template evaluasi](docs/20-TEMPLATE-EVALUASI.md) | Laporan / sidang |
 
 ## Keamanan
 

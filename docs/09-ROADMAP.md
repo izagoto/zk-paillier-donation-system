@@ -46,10 +46,10 @@ Cakupan: auth, campaign, Paillier, circuit dan Groth16, smart contract, API dona
 **Status:** penelitian lanjutan.
 
 - [x] Definisikan threat model dan properti privasi (ringkas di [08-KEAMANAN.md](08-KEAMANAN.md) §5).
-- [ ] Desain proof-to-ciphertext binding.
+- [x] Desain proof-to-ciphertext binding ([17-PROOF-CIPHERTEXT-BINDING.md](17-PROOF-CIPHERTEXT-BINDING.md)); implementasi circuit belum.
 - [ ] Evaluasi client-side encryption dan pengelolaan randomness.
-- [ ] Benchmark proof generation/verification serta Paillier.
-- [ ] Tinjau keamanan kunci dan trusted setup.
+- [ ] Benchmark proof generation/verification serta Paillier (perintah di [20-TEMPLATE-EVALUASI.md](20-TEMPLATE-EVALUASI.md)).
+- [ ] Tinjau keamanan kunci dan trusted setup (ringkas di [18-BACKUP-RECOVERY-DEMO.md](18-BACKUP-RECOVERY-DEMO.md)).
 
 **Exit criteria:** klaim kriptografi dibuktikan melalui desain, test, dan evaluasi yang dapat direproduksi.
 
@@ -59,10 +59,11 @@ Cakupan: auth, campaign, Paillier, circuit dan Groth16, smart contract, API dona
 
 - [x] CI: `go test` (tanpa integrasi Hardhat default) + `frontend` build (`.github/workflows/ci.yml`).
 - [x] E2E browser Playwright — tes publik di CI; login/API lokal (`@integration`, lihat [15-E2E.md](15-E2E.md)).
-- [ ] E2E alur donasi penuh + security tests terstruktur.
+- [ ] E2E alur donasi penuh di CI (manual sidang + [14-SIDANG-DEMO.md](14-SIDANG-DEMO.md)).
+- [x] Security/reliability tests terstruktur (checklist [19-SECURITY-TEST-CHECKLIST.md](19-SECURITY-TEST-CHECKLIST.md), `handler_create_test.go`).
 - [x] Observability dasar: log request (`X-Request-Id`), `/health/ready` (ping DB).
-- [ ] Backup, recovery, environment staging.
-- [ ] Evaluasi correctness, privacy, performance, reliability.
+- [x] Backup & recovery demo ([18-BACKUP-RECOVERY-DEMO.md](18-BACKUP-RECOVERY-DEMO.md)); staging terpisah belum.
+- [x] Template evaluasi laporan ([20-TEMPLATE-EVALUASI.md](20-TEMPLATE-EVALUASI.md)); isi angka oleh peneliti.
 - [x] Dokumentasi keterbatasan demo ([16-KETERBATASAN-DEMO.md](16-KETERBATASAN-DEMO.md)); laporan eksperimen formal masih terbuka.
 
 ## Next step langsung

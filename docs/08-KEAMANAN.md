@@ -42,15 +42,11 @@ Tabel `donations_duplicate_archive` (migration 000005) hanya untuk audit; kebija
 
 Detail implementasi reliability: [13-RELIABILITY.md](13-RELIABILITY.md).
 
-## 6. Pengujian keamanan yang direncanakan
+## 6. Pengujian keamanan
 
-- Invalid proof dan public input mismatch.
-- Replay proof/commitment dan concurrent duplicate submissions.
-- Blockchain RPC timeout serta receipt tidak pasti.
-- Kegagalan update status dan aggregate.
-- Pengujian ciphertext mismatch terhadap nilai witness.
-- Pemeriksaan akses private key dan kebocoran log.
-- Pengujian pemulihan data setelah restart blockchain development.
+Checklist lengkap (otomatis vs manual): [19-SECURITY-TEST-CHECKLIST.md](19-SECURITY-TEST-CHECKLIST.md).
+
+Masih terbuka setelah Phase 4: ciphertext mismatch terhadap witness, rate limiting produksi, audit formal trusted setup.
 
 ## 7. Batas penggunaan
 
