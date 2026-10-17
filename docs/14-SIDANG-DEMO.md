@@ -9,7 +9,7 @@ Gunakan dokumen ini sebagai urutan singkat sebelum presentasi. Detail teknis: [1
 - [ ] Hardhat node + deploy kontrak; alamat kontrak di `.env`
 - [ ] Akun demo: `pengelola@demo.local`, `donatur@demo.local` / `demo12345`
 - [ ] Akun **admin** via `POST /api/auth/register` + `BOOTSTRAP_TOKEN`
-- [ ] Opsional: `./backend/scripts/setup_demo_presentation.sh` (metadata campaign)
+- [ ] Opsional: `./backend/scripts/setup_demo_presentation.sh` (metadata + data scroll tabel UI)
 - [ ] Smoke API: `./backend/scripts/smoke_api.sh`
 
 ## Terminal yang harus hidup

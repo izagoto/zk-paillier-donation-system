@@ -13,8 +13,8 @@ test.describe('login donatur @integration', () => {
 
   test('login mengarah ke dashboard donatur', async ({ page }) => {
     await page.goto('/login');
-    await page.getByLabel('Email').fill(donorEmail!);
-    await page.getByLabel('Password').fill(donorPassword!);
+    await page.locator('input[name="email"]').fill(donorEmail!);
+    await page.locator('input[name="password"]').fill(donorPassword!);
     await page.getByRole('button', { name: 'Masuk' }).click();
 
     await expect(page).toHaveURL(/\/donor$/);
@@ -23,8 +23,8 @@ test.describe('login donatur @integration', () => {
 
   test('riwayat donasi dapat dibuka', async ({ page }) => {
     await page.goto('/login');
-    await page.getByLabel('Email').fill(donorEmail!);
-    await page.getByLabel('Password').fill(donorPassword!);
+    await page.locator('input[name="email"]').fill(donorEmail!);
+    await page.locator('input[name="password"]').fill(donorPassword!);
     await page.getByRole('button', { name: 'Masuk' }).click();
 
     await page.getByRole('link', { name: 'Riwayat donasi' }).click();

@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Eye } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { apiRequest, type AggregateSummary, type Campaign } from '../api/client';
 import { ButtonLink } from '../components/workspace/Button';
 import { DataTable } from '../components/workspace/DataTable';
@@ -29,14 +29,39 @@ import {
 } from '../lib/campaignProgress';
 import { NAV } from '../lib/navigation';
 import { formatAmount, formatDateTime } from '../lib/format';
+import { VISIBLE_BODY_ROWS_MY_CAMPAIGNS } from '../lib/dataTableScroll';
 
 type StatusFilter = 'all' | 'active' | 'other';
+
+function statusFilterFromParam(raw: string | null): StatusFilter {
+  if (raw === 'active' || raw === 'other') {
+    return raw;
+  }
+  return 'all';
+}
 
 export function MyCampaignsPage() {
   const { user } = useAuth();
   const { campaigns, loading, error, reload } = useCampaigns();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const statusFilter = statusFilterFromParam(searchParams.get('status'));
+
+  const setStatusFilter = (value: StatusFilter) => {
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.set('mine', '1');
+        if (value === 'all') {
+          next.delete('status');
+        } else {
+          next.set('status', value);
+        }
+        return next;
+      },
+      { replace: true },
+    );
+  };
   const [donationCountTotal, setDonationCountTotal] = useState<number | null>(
     null,
   );
@@ -97,6 +122,9 @@ export function MyCampaignsPage() {
   const filteredIds = useMemo(() => filtered.map((c) => c.id), [filtered]);
   const { aggregates } = useCampaignAggregates(filteredIds);
 
+  const tableFillLayout =
+    !loading && filtered.length >= VISIBLE_BODY_ROWS_MY_CAMPAIGNS;
+
   return (
     <PageShell
       contentLayout="pane"
@@ -114,6 +142,13 @@ export function MyCampaignsPage() {
         </div>
       }
     >
+      <div
+        className={
+          tableFillLayout
+            ? 'flex min-h-0 flex-1 flex-col gap-5 overflow-hidden'
+            : 'tg-scroll-y min-h-0 flex-1 basis-0 pr-0.5'
+        }
+      >
       <div className="grid shrink-0 gap-4 sm:grid-cols-3">
         <SummaryCard
           label="Total campaign"
@@ -141,7 +176,8 @@ export function MyCampaignsPage() {
       </div>
 
       <DataTableCard
-        scrollBody="auto"
+        scrollBody={tableFillLayout ? 'fill' : undefined}
+        className={tableFillLayout ? 'min-h-0 flex-1' : undefined}
         toolbar={
           <>
             <SearchField
@@ -162,7 +198,7 @@ export function MyCampaignsPage() {
           </>
         }
       >
-        {loading ? (
+        {loading && mine.length === 0 ? (
           <TableSkeleton embedded />
         ) : error ? (
           <div className="border-t border-[#e4e4e7] p-5">
@@ -187,9 +223,12 @@ export function MyCampaignsPage() {
         ) : (
           <DataTable
             variant="embedded"
+            scrollBody={tableFillLayout ? 'fill' : undefined}
             data={filtered}
             rowKey={(campaign) => campaign.id}
             minWidth="880px"
+            visibleBodyRows={VISIBLE_BODY_ROWS_MY_CAMPAIGNS}
+            pageSizeStorageKey="campaigns:mine"
             columns={[
             {
               id: 'campaign',
@@ -275,6 +314,7 @@ export function MyCampaignsPage() {
           />
         )}
       </DataTableCard>
+      </div>
     </PageShell>
   );
 }

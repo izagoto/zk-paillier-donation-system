@@ -12,6 +12,7 @@ import { StatusBadge } from '../components/workspace/StatusBadge';
 import { TableSkeleton } from '../components/workspace/TableSkeleton';
 import { NAV } from '../lib/navigation';
 import { formatAmount, formatDateTime, truncateMiddle } from '../lib/format';
+import { VISIBLE_BODY_ROWS_MY_DONATIONS } from '../lib/dataTableScroll';
 
 export function MyDonationsPage() {
   const [donations, setDonations] = useState<Donation[]>([]);
@@ -71,7 +72,7 @@ export function MyDonationsPage() {
       title={NAV.donationHistory}
       subtitle="Semua donasi yang Anda kirim. Klik nama campaign untuk kembali ke detail."
     >
-      {loading ? (
+      {loading && donations.length === 0 ? (
         <TableSkeleton rows={5} />
       ) : error ? (
         <PageAlert message={error} onRetry={() => void load()} />
@@ -87,6 +88,8 @@ export function MyDonationsPage() {
           data={donations}
           rowKey={(d) => d.id}
           minWidth="800px"
+          visibleBodyRows={VISIBLE_BODY_ROWS_MY_DONATIONS}
+          pageSizeStorageKey="donor:donations"
           columns={[
             {
               id: 'campaign',

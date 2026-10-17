@@ -58,7 +58,6 @@ export function HomePage() {
       }
     >
       <Panel
-        scrollBody="auto"
         title="Campaign aktif"
         subtitle="Maksimal 6 campaign terbaru"
         actions={

@@ -80,28 +80,42 @@ export function CreateCampaignModal({ open, onClose, onCreated }: Props) {
       onClose={handleClose}
       title="Buat campaign"
       description="Tetapkan target, deskripsi, dan batas maksimal donasi per transaksi."
-      size="lg"
+      size="xl"
+      closeOnBackdropClick={false}
+      closeOnEscape={false}
     >
-      <form className="space-y-5" onSubmit={onSubmit}>
-        <FormField label="Judul campaign">
-          <TextInput
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Contoh: Bantuan Pendidikan Desa X"
-            required
-            disabled={loading}
-          />
-        </FormField>
-        <FormField label="Deskripsi">
-          <TextArea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            rows={4}
-            placeholder="Ceritakan tujuan dan penggunaan dana secara singkat."
-            disabled={loading}
-          />
-        </FormField>
-        <div className="grid gap-5 sm:grid-cols-2">
+      <form onSubmit={onSubmit}>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <FormField label="Judul campaign">
+            <TextInput
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Contoh: Bantuan Pendidikan Desa X"
+              required
+              disabled={loading}
+            />
+          </FormField>
+          <FormField label="URL gambar (opsional)">
+            <TextInput
+              value={imageUrl}
+              onChange={(e) => setImageUrl(e.target.value)}
+              placeholder="https://…"
+              disabled={loading}
+            />
+          </FormField>
+
+          <div className="sm:col-span-2">
+            <FormField label="Deskripsi">
+              <TextArea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={3}
+                placeholder="Ceritakan tujuan dan penggunaan dana secara singkat."
+                disabled={loading}
+              />
+            </FormField>
+          </div>
+
           <FormField label="Kategori">
             <TextInput
               value={category}
@@ -118,16 +132,7 @@ export function CreateCampaignModal({ open, onClose, onCreated }: Props) {
               disabled={loading}
             />
           </FormField>
-        </div>
-        <FormField label="URL gambar (opsional)">
-          <TextInput
-            value={imageUrl}
-            onChange={(e) => setImageUrl(e.target.value)}
-            placeholder="https://…"
-            disabled={loading}
-          />
-        </FormField>
-        <div className="grid gap-5 sm:grid-cols-2">
+
           <FormField
             label="Target donasi (Rp)"
             hint="Total yang ingin dikumpulkan."
@@ -143,7 +148,7 @@ export function CreateCampaignModal({ open, onClose, onCreated }: Props) {
           </FormField>
           <FormField
             label="Maksimal per donasi (Rp)"
-            hint="Donatur tidak dapat melebihi nominal ini dalam satu kali donasi."
+            hint="Batas satu kali donasi."
           >
             <TextInput
               value={maxDonation}
@@ -157,12 +162,12 @@ export function CreateCampaignModal({ open, onClose, onCreated }: Props) {
         </div>
 
         {error ? (
-          <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800">
+          <p className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800">
             {error}
           </p>
         ) : null}
 
-        <div className="flex flex-col-reverse gap-2 border-t border-trust-border pt-4 sm:flex-row sm:justify-end">
+        <div className="mt-4 flex flex-col-reverse gap-2 border-t border-trust-border pt-3 sm:flex-row sm:justify-end">
           <button
             type="button"
             onClick={handleClose}

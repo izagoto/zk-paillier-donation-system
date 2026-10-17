@@ -9,7 +9,8 @@
     "lint": "oxlint",
     "preview": "vite preview",
     "test:e2e": "playwright test",
-    "test:e2e:public": "playwright test --grep @public"
+    "test:e2e:public": "playwright test --grep @public",
+    "test:e2e:datatable": "playwright test e2e/datatable.spec.ts"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",

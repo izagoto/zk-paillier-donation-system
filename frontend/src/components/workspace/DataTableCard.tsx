@@ -1,49 +1,44 @@
 import type { ReactNode } from 'react';
 
 type Props = {
+  className?: string;
   toolbar?: ReactNode;
   children: ReactNode;
   /**
-   * Toolbar tetap di atas; isi kartu yang scroll.
-   * `fill` — kartu mengisi sisa tinggi (grid campaign).
-   * `auto` — tinggi mengikuti konten; scroll hanya jika melebihi area tersedia.
+   * `fill` — kartu mengisi sisa tinggi (grid / konten panjang).
+   * Tanpa opsi — tinggi mengikuti isi (disarankan untuk DataTable).
    */
-  scrollBody?: boolean | 'fill' | 'auto';
+  scrollBody?: boolean | 'fill';
 };
 
 /** Kartu tunggal: toolbar (cari/filter) + tabel / skeleton / empty. */
-export function DataTableCard({ toolbar, children, scrollBody }: Props) {
-  const scrollMode =
-    scrollBody === true || scrollBody === 'fill'
-      ? 'fill'
-      : scrollBody === 'auto'
-        ? 'auto'
-        : null;
+export function DataTableCard({
+  className = '',
+  toolbar,
+  children,
+  scrollBody,
+}: Props) {
+  const fill = scrollBody === true || scrollBody === 'fill';
 
-  if (scrollMode === 'fill') {
+  if (fill) {
     return (
-      <div className="tg-data-table-card flex min-h-0 flex-1 flex-col overflow-hidden">
+      <div
+        className={`tg-data-table-card tg-data-table-card--fill flex min-h-0 flex-1 flex-col overflow-hidden ${className}`.trim()}
+      >
         {toolbar ? (
           <div className="tg-data-table__toolbar shrink-0">{toolbar}</div>
         ) : null}
-        <div className="tg-scroll-y min-h-0 flex-1 basis-0">{children}</div>
-      </div>
-    );
-  }
-
-  if (scrollMode === 'auto') {
-    return (
-      <div className="tg-data-table-card flex max-h-full min-h-0 w-full flex-col overflow-hidden">
-        {toolbar ? (
-          <div className="tg-data-table__toolbar shrink-0">{toolbar}</div>
-        ) : null}
-        <div className="tg-scroll-y min-h-0 overflow-y-auto">{children}</div>
+        <div className="tg-data-table-card__body min-h-0 flex-1 basis-0">
+          {children}
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="tg-data-table-card overflow-hidden">
+    <div
+      className={`tg-data-table-card flex w-full shrink-0 flex-col self-start overflow-hidden ${className}`.trim()}
+    >
       {toolbar ? <div className="tg-data-table__toolbar">{toolbar}</div> : null}
       {children}
     </div>

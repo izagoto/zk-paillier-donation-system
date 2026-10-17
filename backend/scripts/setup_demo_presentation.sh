@@ -11,4 +11,8 @@ psql "$DB_URL" -f "$ROOT/backend/scripts/cleanup_demo_campaigns.sql"
 echo "==> Perkaya metadata campaign pengelola (seed)"
 psql "$DB_URL" -f "$ROOT/backend/scripts/seed_demo_presentation.sql"
 
+echo "==> Data scroll DataTable (>=6 baris per tabel demo)"
+psql "$DB_URL" -f "$ROOT/backend/scripts/seed_datatable_scroll.sql"
+
 echo "Selesai. Pastikan Hardhat + backend + frontend berjalan."
+echo "Uji scroll UI: docs/15-E2E.md (bagian DataTable demo)."

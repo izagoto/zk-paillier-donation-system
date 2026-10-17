@@ -67,26 +67,40 @@ export function EditCampaignModal({
       onClose={onClose}
       title="Kelola campaign"
       description="Perbarui informasi atau tutup campaign agar tidak menerima donasi baru."
-      size="lg"
+      size="xl"
+      closeOnBackdropClick={false}
+      closeOnEscape={false}
     >
-      <form className="space-y-4" onSubmit={onSubmit}>
-        <FormField label="Judul">
-          <TextInput
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            required
-            disabled={loading}
-          />
-        </FormField>
-        <FormField label="Deskripsi">
-          <TextArea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            rows={4}
-            disabled={loading}
-          />
-        </FormField>
+      <form onSubmit={onSubmit}>
         <div className="grid gap-4 sm:grid-cols-2">
+          <FormField label="Judul">
+            <TextInput
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              required
+              disabled={loading}
+            />
+          </FormField>
+          <FormField label="URL gambar (opsional)" hint="Tautan cover campaign.">
+            <TextInput
+              value={imageUrl}
+              onChange={(e) => setImageUrl(e.target.value)}
+              placeholder="https://…"
+              disabled={loading}
+            />
+          </FormField>
+
+          <div className="sm:col-span-2">
+            <FormField label="Deskripsi">
+              <TextArea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={3}
+                disabled={loading}
+              />
+            </FormField>
+          </div>
+
           <FormField label="Kategori">
             <TextInput
               value={category}
@@ -103,32 +117,27 @@ export function EditCampaignModal({
               disabled={loading}
             />
           </FormField>
+
+          <FormField label="Status">
+            <select
+              className="tg-input"
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+              disabled={loading}
+            >
+              <option value="active">Aktif — menerima donasi</option>
+              <option value="closed">Ditutup — tidak menerima donasi baru</option>
+            </select>
+          </FormField>
         </div>
-        <FormField label="URL gambar (opsional)" hint="Tautan gambar cover campaign.">
-          <TextInput
-            value={imageUrl}
-            onChange={(e) => setImageUrl(e.target.value)}
-            placeholder="https://…"
-            disabled={loading}
-          />
-        </FormField>
-        <FormField label="Status">
-          <select
-            className="tg-input"
-            value={status}
-            onChange={(e) => setStatus(e.target.value)}
-            disabled={loading}
-          >
-            <option value="active">Aktif — menerima donasi</option>
-            <option value="closed">Ditutup — tidak menerima donasi baru</option>
-          </select>
-        </FormField>
 
         {error ? (
-          <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800">{error}</p>
+          <p className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800">
+            {error}
+          </p>
         ) : null}
 
-        <div className="flex flex-col-reverse gap-2 border-t border-trust-border pt-4 sm:flex-row sm:justify-end">
+        <div className="mt-4 flex flex-col-reverse gap-2 border-t border-trust-border pt-3 sm:flex-row sm:justify-end">
           <button
             type="button"
             onClick={onClose}

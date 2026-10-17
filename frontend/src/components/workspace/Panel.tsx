@@ -9,8 +9,8 @@ type Props = {
   children: ReactNode;
   flush?: boolean;
   className?: string;
-  /** Header tetap; isi panel yang scroll (`fill` = isi sisa tinggi halaman). */
-  scrollBody?: 'fill' | 'auto';
+  /** `fill` = panel mengisi sisa tinggi; isi di-scroll di dalam panel. */
+  scrollBody?: 'fill';
 };
 
 export function Panel({
@@ -58,19 +58,6 @@ export function Panel({
       >
         {header ?? null}
         <div className={`tg-scroll-y min-h-0 flex-1 basis-0 ${bodyClass}`}>
-          {children}
-        </div>
-      </section>
-    );
-  }
-
-  if (scrollBody === 'auto') {
-    return (
-      <section
-        className={`tg-panel flex max-h-full min-h-0 w-full flex-col overflow-hidden ${className}`}
-      >
-        {header}
-        <div className={`tg-scroll-y min-h-0 overflow-y-auto ${bodyClass}`}>
           {children}
         </div>
       </section>

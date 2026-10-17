@@ -103,7 +103,7 @@ export function PageShell({
         <div
           className={
             contentLayout === 'pane'
-              ? 'tg-page-stack flex min-h-0 flex-1 flex-col'
+              ? 'tg-page-stack flex min-h-0 flex-1 flex-col overflow-hidden'
               : 'tg-page-stack'
           }
         >

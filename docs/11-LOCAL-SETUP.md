@@ -46,7 +46,7 @@ Setelah pull terbaru, pastikan migrasi sampai **000007** (metadata campaign: gam
 Setelah ada campaign dari akun `pengelola@demo.local`:
 
 ```bash
-# dari root repo (cleanup campaign uji + seed metadata)
+# dari root repo (cleanup campaign uji + seed metadata + data scroll tabel)
 ./backend/scripts/setup_demo_presentation.sh
 ```
 
@@ -55,7 +55,10 @@ Atau manual dari folder `backend`:
 ```bash
 psql "$DATABASE_URL" -f scripts/cleanup_demo_campaigns.sql
 psql "$DATABASE_URL" -f scripts/seed_demo_presentation.sql
+psql "$DATABASE_URL" -f scripts/seed_datatable_scroll.sql
 ```
+
+Skrip `seed_datatable_scroll.sql` menambah **8 campaign** demo, **11 donasi** terkonfirmasi, dan **6 baris archive** (admin). **Campaign saya**: scroll **>6**; **Donasi masuk** (organizer): scroll **>7**; **Riwayat donasi** (donatur): scroll **>10**; tab detail campaign tetap **>5**. Butuh minimal satu campaign aktif milik `pengelola@demo.local`.
 
 Akun **admin** (rekonsiliasi UI): `POST /api/auth/register` dengan `BOOTSTRAP_TOKEN` dan `"role":"admin"` — lihat [10-AKSES-LOGIN.md](10-AKSES-LOGIN.md).
 

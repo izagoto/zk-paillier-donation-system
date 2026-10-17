@@ -29,12 +29,13 @@ export function TextInput(
   return <input className={inputClass} {...props} />;
 }
 
-export function TextArea(
-  props: React.TextareaHTMLAttributes<HTMLTextAreaElement>,
-) {
+export function TextArea({
+  className = '',
+  ...props
+}: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
   return (
     <textarea
-      className={`${inputClass} min-h-[120px] resize-y py-2.5`}
+      className={`${inputClass} min-h-[5.5rem] resize-y py-2.5 ${className}`.trim()}
       {...props}
     />
   );

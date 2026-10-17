@@ -17,6 +17,21 @@ import { NAV } from '../lib/navigation';
 import { canCreateCampaign } from '../lib/roles';
 import { MyCampaignsPage } from './MyCampaignsPage';
 
+/** Grid kartu campaign: satu/two item tidak memakai kolom 1/3 lebar penuh. */
+function campaignGridClass(count: number): string {
+  const base = 'grid w-full gap-4 p-6';
+  if (count <= 1) {
+    return `${base} max-w-xl grid-cols-1 justify-items-stretch`;
+  }
+  if (count === 2) {
+    return `${base} max-w-5xl grid-cols-1 justify-items-stretch sm:grid-cols-2`;
+  }
+  return `${base} sm:grid-cols-2 xl:grid-cols-3`;
+}
+
+/** Isi cukup banyak — kartu fill + scroll body (≈2 baris di xl). */
+const EXPLORE_CARD_FILL_MIN = 6;
+
 export function CampaignListPage() {
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
@@ -70,6 +85,8 @@ export function CampaignListPage() {
   }
 
   const activeCount = campaigns.filter((c) => c.status === 'active').length;
+  const cardFillLayout = !loading && filtered.length >= EXPLORE_CARD_FILL_MIN;
+  const gridClass = campaignGridClass(filtered.length);
 
   return (
     <PageShell
@@ -87,8 +104,16 @@ export function CampaignListPage() {
         ) : null
       }
     >
+      <div
+        className={
+          cardFillLayout
+            ? 'flex min-h-0 flex-1 flex-col overflow-hidden'
+            : 'w-full shrink-0'
+        }
+      >
       <DataTableCard
-        scrollBody="fill"
+        scrollBody={cardFillLayout ? 'fill' : undefined}
+        className={cardFillLayout ? 'min-h-0 flex-1' : undefined}
         toolbar={
           <>
             <SearchField
@@ -143,7 +168,7 @@ export function CampaignListPage() {
             description="Ubah kata kunci pencarian atau filter status."
           />
         ) : (
-          <div className="grid gap-4 p-6 sm:grid-cols-2 xl:grid-cols-3">
+          <div className={gridClass}>
             {filtered.map((campaign) => (
               <CampaignCard
                 key={campaign.id}
@@ -154,6 +179,7 @@ export function CampaignListPage() {
           </div>
         )}
       </DataTableCard>
+      </div>
     </PageShell>
   );
 }

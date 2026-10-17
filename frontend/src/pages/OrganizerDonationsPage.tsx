@@ -13,6 +13,7 @@ import { useAuth } from '../context/AuthContext';
 import { useCampaigns } from '../hooks/useCampaigns';
 import { NAV } from '../lib/navigation';
 import { formatDateTime, truncateMiddle } from '../lib/format';
+import { VISIBLE_BODY_ROWS_ORGANIZER_LIST } from '../lib/dataTableScroll';
 
 type Row = Donation & { campaignTitle: string };
 
@@ -66,6 +67,7 @@ export function OrganizerDonationsPage() {
   }, [mine]);
 
   const loading = campaignsLoading || loadingDonations;
+  const showSkeleton = loading && rows.length === 0;
 
   const subtitle =
     rows.length > 0
@@ -90,7 +92,7 @@ export function OrganizerDonationsPage() {
         )
       }
     >
-      {loading ? (
+      {showSkeleton ? (
         <TableSkeleton rows={6} />
       ) : error ? (
         <PageAlert message={error} onRetry={() => void reload()} />
@@ -118,6 +120,8 @@ export function OrganizerDonationsPage() {
           data={rows}
           rowKey={(row) => row.id}
           minWidth="800px"
+          visibleBodyRows={VISIBLE_BODY_ROWS_ORGANIZER_LIST}
+          pageSizeStorageKey="organizer:donations"
           columns={[
             {
               id: 'campaign',
