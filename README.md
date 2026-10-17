@@ -95,6 +95,7 @@ flowchart TD
 | [Backup demo](docs/18-BACKUP-RECOVERY-DEMO.md) | pg_dump & reset Hardhat |
 | [Security checklist](docs/19-SECURITY-TEST-CHECKLIST.md) | Uji otomatis vs manual |
 | [Template evaluasi](docs/20-TEMPLATE-EVALUASI.md) | Laporan / sidang |
+| [**Manual book**](docs/21-MANUAL-BOOK.md) | Panduan penggunaan UI TrustGive (per role & halaman) |
 
 ## Keamanan
 
