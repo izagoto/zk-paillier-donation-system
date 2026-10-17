@@ -3,11 +3,13 @@ package main
 import (
 	"context"
 	"log"
+	"time"
 
 	"github.com/izagoto/zk-paillier-donation-system/internal/blockchain"
 	"github.com/izagoto/zk-paillier-donation-system/internal/config"
 	"github.com/izagoto/zk-paillier-donation-system/internal/crypto/paillier"
 	"github.com/izagoto/zk-paillier-donation-system/internal/database"
+	"github.com/izagoto/zk-paillier-donation-system/internal/donation"
 	"github.com/izagoto/zk-paillier-donation-system/internal/router"
 	"github.com/izagoto/zk-paillier-donation-system/internal/zk"
 )
@@ -97,7 +99,7 @@ func main() {
 	}
 	defer db.Close()
 
-	r := router.Setup(
+	r, donationService := router.Setup(
 		db,
 		cfg.JWTSecret,
 		cfg.BootstrapToken,
@@ -107,6 +109,13 @@ func main() {
 		zkProver,
 		blockchainRegistry,
 		blockchainSigner,
+	)
+
+	ctx := context.Background()
+	donation.StartPendingReconcileLoop(
+		ctx,
+		donationService,
+		time.Duration(cfg.PendingReconcileSec)*time.Second,
 	)
 
 	log.Printf("server running on :%s", cfg.AppPort)

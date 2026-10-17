@@ -59,7 +59,9 @@ psql "$DATABASE_URL" -f scripts/seed_demo_presentation.sql
 
 Akun **admin** (rekonsiliasi UI): `POST /api/auth/register` dengan `BOOTSTRAP_TOKEN` dan `"role":"admin"` — lihat [10-AKSES-LOGIN.md](10-AKSES-LOGIN.md).
 
-Reliability (idempotency, retry, admin rekonsiliasi): [13-RELIABILITY.md](13-RELIABILITY.md).
+Reliability (idempotency, retry, admin rekonsiliasi): [13-RELIABILITY.md](13-RELIABILITY.md).  
+Checklist sidang: [14-SIDANG-DEMO.md](14-SIDANG-DEMO.md).  
+Smoke API (backend hidup): `./backend/scripts/smoke_api.sh`.
 
 Cek koneksi:
 

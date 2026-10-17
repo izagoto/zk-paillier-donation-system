@@ -17,6 +17,8 @@ type Config struct {
 	BlockchainContract   string
 	BlockchainPrivateKey string
 	BootstrapToken       string
+	// Detik antar rekonsiliasi donasi pending; 0 = nonaktif.
+	PendingReconcileSec int
 }
 
 func Load() (*Config, error) {
@@ -25,6 +27,13 @@ func Load() (*Config, error) {
 	keySize, err := strconv.Atoi(os.Getenv("PAILLIER_KEY_SIZE"))
 	if err != nil {
 		return nil, err
+	}
+
+	pendingSec := 120
+	if raw := os.Getenv("DONATION_PENDING_RECONCILE_SEC"); raw != "" {
+		if parsed, err := strconv.Atoi(raw); err == nil {
+			pendingSec = parsed
+		}
 	}
 
 	return &Config{
@@ -37,5 +46,6 @@ func Load() (*Config, error) {
 		BlockchainContract:   os.Getenv("BLOCKCHAIN_CONTRACT_ADDRESS"),
 		BlockchainPrivateKey: os.Getenv("BLOCKCHAIN_PRIVATE_KEY"),
 		BootstrapToken:       os.Getenv("BOOTSTRAP_TOKEN"),
+		PendingReconcileSec:  pendingSec,
 	}, nil
 }

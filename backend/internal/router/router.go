@@ -25,7 +25,7 @@ func Setup(
 	zkProver *zk.Prover,
 	blockchainRegistry *blockchain.Registry,
 	blockchainSigner *blockchain.Signer,
-) *gin.Engine {
+) (*gin.Engine, *donation.Service) {
 	r := gin.Default()
 	r.Use(middleware.CORS())
 
@@ -175,5 +175,5 @@ func Setup(
 		}
 	}
 
-	return r
+	return r, donationService
 }

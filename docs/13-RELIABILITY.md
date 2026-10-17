@@ -42,6 +42,24 @@ UI: `/admin/reconciliation` (login sebagai admin).
 - `POST /api/admin/donations/reconcile-pending?limit=50`
 - Untuk setiap donasi `pending`: jika sudah ada `tx_hash`, konfirmasi + agregat; jika belum, kirim ulang ke chain (`finalizeOnChain`).
 - UI: tombol **Proses pending** di `/admin/reconciliation`.
+- **Worker otomatis:** saat server jalan, goroutine memanggil rekonsiliasi yang sama setiap `DONATION_PENDING_RECONCILE_SEC` detik (default `120`; `0` = mati). Lihat `backend/.env.example`.
+
+## Smoke & uji paralel
+
+```bash
+./backend/scripts/smoke_api.sh
+# Opsional admin:
+ADMIN_EMAIL=admin@demo.local ADMIN_PASSWORD=... ./backend/scripts/smoke_api.sh
+```
+
+Uji concurrent idempotency (butuh body donasi valid):
+
+```bash
+export DONATION_JSON=/path/to/donation-body.json
+./backend/scripts/concurrent_idempotency.sh
+```
+
+Unit test (termasuk deteksi unique violation): `go test ./internal/donation/...`
 
 ## Kebijakan archive (canonical record)
 

@@ -7,7 +7,7 @@ Cakupan: auth, campaign, Paillier, circuit dan Groth16, smart contract, API dona
 
 ## Phase 2 — Integritas data dan reliability
 
-**Status:** sedang dikerjakan; prioritas tertinggi.
+**Status:** selesai untuk MVP sidang; perbaikan lanjutan bila data produksi bertumbuh.
 
 - [x] Investigasi duplicate historis.
 - [x] Backup database sebelum perbaikan.
@@ -21,8 +21,8 @@ Cakupan: auth, campaign, Paillier, circuit dan Groth16, smart contract, API dona
 - [x] Retry donasi `failed` (`POST /api/donations/:id/retry`) tanpa baris baru.
 - [x] Overview rekonsiliasi + hitung ulang agregat (admin API + UI).
 - [x] Rekonsiliasi chain vs DB untuk `pending` (admin `POST /api/admin/donations/reconcile-pending`).
-- [ ] Worker otomatis / terjadwal untuk RPC timeout (saat ini manual via admin).
-- [ ] Uji beban concurrent idempotency otomatis (uji manual di [13-RELIABILITY.md](13-RELIABILITY.md)).
+- [x] Worker otomatis / terjadwal untuk RPC timeout (`DONATION_PENDING_RECONCILE_SEC`, goroutine di server).
+- [x] Uji concurrent idempotency: skrip `backend/scripts/concurrent_idempotency.sh` + unit test `IsUniqueViolation` (uji manual di [13-RELIABILITY.md](13-RELIABILITY.md)).
 
 **Exit criteria:** retry tidak menggandakan donasi; status dan aggregate dapat direkonsiliasi; bukti historis tetap terpelihara.
 
@@ -64,4 +64,4 @@ Cakupan: auth, campaign, Paillier, circuit dan Groth16, smart contract, API dona
 
 ## Next step langsung
 
-Untuk sidang: `./backend/scripts/setup_demo_presentation.sh`, buat akun `admin` via register API, smoke test happy path. Penelitian lanjutan: proof-to-ciphertext binding (Phase 4), E2E CI (Phase 5).
+Untuk sidang: [14-SIDANG-DEMO.md](14-SIDANG-DEMO.md), `./backend/scripts/setup_demo_presentation.sh`, `./backend/scripts/smoke_api.sh`, akun `admin` via register API. Penelitian lanjutan: proof-to-ciphertext binding (Phase 4), E2E CI (Phase 5).
